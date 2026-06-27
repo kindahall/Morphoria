@@ -26,6 +26,8 @@ namespace Morphoria
         private float yaw;
         private float pitch = 24f;
         private float lastManualLookTime;
+        private float impulseStrength;
+        private float impulseTimer;
 
         private void Start()
         {
@@ -74,6 +76,20 @@ namespace Morphoria
                 float turnSharpness = reduceMotion ? rotationSharpness * 1.25f : rotationSharpness;
                 transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, 1f - Mathf.Exp(-turnSharpness * Time.deltaTime));
             }
+
+            ApplyImpulse();
+        }
+
+        public void AddImpulse(float strength, float duration)
+        {
+            if (reduceMotion)
+            {
+                strength *= 0.35f;
+                duration *= 0.6f;
+            }
+
+            impulseStrength = Mathf.Max(impulseStrength, strength);
+            impulseTimer = Mathf.Max(impulseTimer, duration);
         }
 
         private Vector3 ResolveCollision(Vector3 pivot, Vector3 desiredPosition)
@@ -95,6 +111,27 @@ namespace Morphoria
             }
 
             return desiredPosition;
+        }
+
+        private void ApplyImpulse()
+        {
+            if (impulseTimer <= 0f || impulseStrength <= 0f)
+            {
+                return;
+            }
+
+            impulseTimer -= Time.deltaTime;
+            float fade = Mathf.Clamp01(impulseTimer / 0.35f);
+            Vector3 offset = new Vector3(
+                Mathf.Sin(Time.time * 71f) * impulseStrength,
+                Mathf.Sin(Time.time * 91f + 0.8f) * impulseStrength,
+                0f) * fade;
+            transform.position += transform.right * offset.x + transform.up * offset.y;
+
+            if (impulseTimer <= 0f)
+            {
+                impulseStrength = 0f;
+            }
         }
 
         private static float NormalizePitch(float value)

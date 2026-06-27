@@ -34,6 +34,7 @@ namespace Morphoria
             if (!CanInteract(player.CurrentDefinition))
             {
                 player.ShowFeedback(Hint(player.CurrentDefinition));
+                MorphoriaFeedbackSystem.GetOrCreate().Play(MorphoriaFeedbackCue.Denied, transform.position + Vector3.up, Color.red, 0.45f);
                 return;
             }
 
@@ -56,6 +57,7 @@ namespace Morphoria
             }
 
             player.ShowFeedback(successMessage);
+            MorphoriaFeedbackSystem.GetOrCreate().Play(MorphoriaFeedbackCue.AbilitySuccess, transform.position + Vector3.up, player.CurrentDefinition.accent, 0.82f);
 
             if (destroyOnSuccess)
             {

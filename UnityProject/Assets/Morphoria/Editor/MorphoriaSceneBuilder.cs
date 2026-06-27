@@ -72,6 +72,7 @@ public static class MorphoriaSceneBuilder
         cages.SetParent(root);
 
         CreateLighting();
+        CreateFeedbackSystem();
         MorphoriaPlayer player = CreatePlayer();
         Camera camera = CreateCamera(player.transform);
         player.mainCamera = camera;
@@ -193,6 +194,7 @@ public static class MorphoriaSceneBuilder
         scene.name = MorphoriaGameContent.MainMenuScene;
         ConfigureRenderSettings(new Color(0.46f, 0.67f, 0.86f), new Color(0.38f, 0.62f, 0.82f), 0.011f);
         CreateLighting();
+        CreateFeedbackSystem();
         CreateShellCamera("MainMenuCamera", new Vector3(0f, 5.2f, -12f), new Vector3(0f, 1.4f, 0f), new Color(0.09f, 0.13f, 0.19f), 48f);
 
         Transform root = new GameObject("Morphoria_MainMenu_Set").transform;
@@ -218,6 +220,7 @@ public static class MorphoriaSceneBuilder
         scene.name = MorphoriaGameContent.HubScene;
         ConfigureRenderSettings(new Color(0.52f, 0.72f, 0.9f), new Color(0.58f, 0.74f, 0.9f), 0.009f);
         CreateLighting();
+        CreateFeedbackSystem();
 
         Transform root = new GameObject("Village_Ecloria_Hub").transform;
         Transform village = new GameObject("Village_Plaza").transform;
@@ -262,6 +265,7 @@ public static class MorphoriaSceneBuilder
         scene.name = MorphoriaGameContent.WorldMapScene;
         ConfigureRenderSettings(new Color(0.38f, 0.54f, 0.76f), new Color(0.34f, 0.5f, 0.72f), 0.006f);
         CreateLighting();
+        CreateFeedbackSystem();
         CreateShellCamera("WorldMapCamera", new Vector3(0f, 15f, -14f), new Vector3(0f, 0f, 0f), new Color(0.08f, 0.12f, 0.18f), 42f);
 
         Transform root = new GameObject("WorldMap_Table").transform;
@@ -306,6 +310,7 @@ public static class MorphoriaSceneBuilder
         Color fog = Color.Lerp(GetPrimaryMaterial(level).color, new Color(0.55f, 0.72f, 0.92f), 0.58f);
         ConfigureRenderSettings(fog, fog, 0.0085f);
         CreateLighting();
+        CreateFeedbackSystem();
 
         Transform root = new GameObject(level.sceneName + "_Adventure").transform;
         Transform environment = new GameObject("Floating_Islands").transform;
@@ -569,6 +574,13 @@ public static class MorphoriaSceneBuilder
     private static void CreatePauseMenu()
     {
         new GameObject("PauseMenu").AddComponent<MorphoriaPauseMenu>();
+    }
+
+    private static void CreateFeedbackSystem()
+    {
+        GameObject feedback = new GameObject("Morphoria_FeedbackSystem");
+        feedback.AddComponent<AudioSource>();
+        feedback.AddComponent<MorphoriaFeedbackSystem>();
     }
 
     private static void CreateLevelResultScreen()

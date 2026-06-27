@@ -25,11 +25,13 @@ namespace Morphoria
             if (player.Inventory.VillagersSaved < requiredVillagers)
             {
                 player.ShowFeedback("Villageois restants");
+                MorphoriaFeedbackSystem.GetOrCreate().Play(MorphoriaFeedbackCue.Denied, transform.position + Vector3.up, Color.red, 0.45f);
                 return;
             }
 
             completing = true;
             player.ShowFeedback("Niveau termine");
+            MorphoriaFeedbackSystem.GetOrCreate().Play(MorphoriaFeedbackCue.LevelComplete, transform.position + Vector3.up * 1.5f, Color.cyan, 1f);
             MorphoriaGameSession session = MorphoriaGameSession.GetOrCreate();
             MorphoriaLevelClearResult result = session.MarkCurrentLevelComplete(player.Inventory.GoldenStars, player.Inventory.PrismObjectivesCollected, player.Inventory.VillagersSaved);
             MorphoriaLevelResultScreen resultScreen = FindAnyObjectByType<MorphoriaLevelResultScreen>();

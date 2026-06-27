@@ -59,6 +59,7 @@ namespace Morphoria
 
             player.Inventory.SaveVillager();
             player.ShowFeedback("Villageois libere");
+            MorphoriaFeedbackSystem.GetOrCreate().Play(MorphoriaFeedbackCue.VillagerSaved, transform.position + Vector3.up, Color.cyan, 0.95f);
         }
     }
 }

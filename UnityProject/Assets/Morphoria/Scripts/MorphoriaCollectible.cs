@@ -34,6 +34,7 @@ namespace Morphoria
 
             player.Inventory.AddCollectible(kind, amount);
             player.ShowFeedback(Feedback());
+            MorphoriaFeedbackSystem.GetOrCreate().PlayCollectible(kind, transform.position);
             gameObject.SetActive(false);
         }
 

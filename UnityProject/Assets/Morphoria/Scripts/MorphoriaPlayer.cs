@@ -177,6 +177,7 @@ namespace Morphoria
                 externalVelocity += desiredDirection.normalized * 8.0f;
                 dashCooldown = 0.85f;
                 ShowFeedback("Dash Cizo");
+                MorphoriaFeedbackSystem.GetOrCreate().Play(MorphoriaFeedbackCue.Dash, transform.position + Vector3.up, CurrentDefinition.accent, 0.7f);
             }
 
             dashCooldown -= Time.deltaTime;
@@ -205,10 +206,12 @@ namespace Morphoria
             checkpointPosition = checkpoint.position + Vector3.up * 1.2f;
             checkpointRotation = checkpoint.rotation;
             ShowFeedback("Checkpoint atteint");
+            MorphoriaFeedbackSystem.GetOrCreate().Play(MorphoriaFeedbackCue.Checkpoint, checkpoint.position + Vector3.up, Color.cyan, 0.85f);
         }
 
         public void Respawn()
         {
+            MorphoriaFeedbackSystem.GetOrCreate().Play(MorphoriaFeedbackCue.Damage, transform.position + Vector3.up, Color.red, 0.75f);
             controller.enabled = false;
             transform.SetPositionAndRotation(checkpointPosition, checkpointRotation);
             verticalVelocity = 0f;
@@ -235,12 +238,14 @@ namespace Morphoria
             if (forcedFormTimer > 0f)
             {
                 ShowFeedback("Forme verrouillee");
+                MorphoriaFeedbackSystem.GetOrCreate().Play(MorphoriaFeedbackCue.Denied, transform.position + Vector3.up, Color.red, 0.45f);
                 return false;
             }
 
             if (inventory.ChoiceStars <= 0)
             {
                 ShowFeedback("Etoile prismatique requise");
+                MorphoriaFeedbackSystem.GetOrCreate().Play(MorphoriaFeedbackCue.Denied, transform.position + Vector3.up, Color.red, 0.45f);
                 return false;
             }
 
@@ -264,6 +269,7 @@ namespace Morphoria
             if (announce)
             {
                 ShowFeedback(CurrentDefinition.heroName + " / " + CurrentDefinition.displayName);
+                MorphoriaFeedbackSystem.GetOrCreate().PlayForm(currentForm, transform.position);
             }
 
             FormChanged?.Invoke(currentForm);
@@ -295,12 +301,14 @@ namespace Morphoria
             if (best == null)
             {
                 ShowFeedback("Rien a activer");
+                MorphoriaFeedbackSystem.GetOrCreate().Play(MorphoriaFeedbackCue.Denied, transform.position + Vector3.up, Color.red, 0.35f);
                 return false;
             }
 
             if (!best.CanInteract(CurrentDefinition))
             {
                 ShowFeedback(best.Hint(CurrentDefinition));
+                MorphoriaFeedbackSystem.GetOrCreate().Play(MorphoriaFeedbackCue.Denied, transform.position + Vector3.up, Color.red, 0.45f);
                 return false;
             }
 

@@ -128,6 +128,8 @@ public static class MorphoriaProductionValidator
             issues.Add(sceneName + ": expected exactly one AudioListener, found " + audioListeners.Length + ".");
         }
 
+        RequireOne<MorphoriaFeedbackSystem>(sceneName, issues);
+
         if (sceneName == MorphoriaGameContent.MainMenuScene)
         {
             RequireOne<MorphoriaMenuScreen>(sceneName, issues);

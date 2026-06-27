@@ -94,6 +94,7 @@ namespace Morphoria
             player.Inventory.Damage(1);
             player.AddExternalVelocity((player.transform.position - transform.position).normalized * 8f + Vector3.up * 4f);
             player.ShowFeedback("Garde-Cage");
+            MorphoriaFeedbackSystem.GetOrCreate().Play(MorphoriaFeedbackCue.Damage, player.transform.position + Vector3.up, Color.red, 0.72f);
             attackCooldown = 1.4f;
         }
 
@@ -118,10 +119,12 @@ namespace Morphoria
             health--;
             player.ShowFeedback(player.CurrentDefinition.canBreak ? "Impact Rokko" : "Coupe Cizo");
             Pulse(player.CurrentDefinition.accent);
+            MorphoriaFeedbackSystem.GetOrCreate().Play(MorphoriaFeedbackCue.BossHit, transform.position + Vector3.up, player.CurrentDefinition.accent, 0.86f);
 
             if (health <= 0)
             {
                 defeated = true;
+                MorphoriaFeedbackSystem.GetOrCreate().Play(MorphoriaFeedbackCue.BossDefeated, transform.position + Vector3.up, new Color(0.78f, 0.42f, 1f), 1f);
                 gameObject.SetActive(false);
                 player.ShowFeedback("Garde-Cage vaincu");
             }
