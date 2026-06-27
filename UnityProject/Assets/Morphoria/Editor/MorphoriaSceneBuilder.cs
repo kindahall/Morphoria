@@ -676,6 +676,12 @@ public static class MorphoriaSceneBuilder
     private static MorphoriaPlayer CreatePlayer()
     {
         GameObject player = new GameObject("Player_Rokko_Luma_Papyra_Cizo");
+        int ignoreRaycastLayer = LayerMask.NameToLayer("Ignore Raycast");
+        if (ignoreRaycastLayer >= 0)
+        {
+            player.layer = ignoreRaycastLayer;
+        }
+
         player.transform.position = new Vector3(-36f, 2.1f, 0f);
         CharacterController controller = player.AddComponent<CharacterController>();
         controller.height = 2.3f;

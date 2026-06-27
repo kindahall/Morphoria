@@ -2,7 +2,7 @@
 
 ## Objectif
 
-Transformer le shell jouable actuel en experience presentable de 10 a 15 minutes, en gardant strictement la direction visuelle des references et en remplacant progressivement les placeholders par des assets conformes.
+Transformer le shell jouable actuel en experience presentable de 10 a 15 minutes, en gardant strictement la direction visuelle des references et en remplacant progressivement les formes temporaires par des assets conformes.
 
 ## Priorites
 
@@ -23,4 +23,16 @@ Transformer le shell jouable actuel en experience presentable de 10 a 15 minutes
 - Chaque niveau peut etre termine et sauvegarde la progression.
 - La fin d'un niveau debloque le suivant.
 - Les reglages et la pause fonctionnent dans les scenes jouables.
-- Les placeholders respectent les couleurs, formes et intentions des visuels Morphoria.
+- Les formes temporaires respectent les couleurs, formes et intentions des visuels Morphoria.
+
+## Validation Unity
+
+Commande de validation scene par scene :
+
+```bash
+/Applications/Unity/Hub/Editor/6000.4.4f1/Unity.app/Contents/MacOS/Unity \
+  -batchmode -quit \
+  -projectPath /Users/Artisaul/Desktop/Morphoria/UnityProject \
+  -executeMethod MorphoriaProductionValidator.ValidateProductionScenes \
+  -logFile /tmp/morphoria_unity_validate.log
+```
