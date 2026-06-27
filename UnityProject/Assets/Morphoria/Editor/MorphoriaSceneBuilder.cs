@@ -300,7 +300,7 @@ public static class MorphoriaSceneBuilder
         GameObject wind = CreateCube("Courant_Air_Luma", position, scale, windMat, parent);
         Collider collider = wind.GetComponent<Collider>();
         collider.isTrigger = true;
-        WindZone zone = wind.AddComponent<WindZone>();
+        Morphoria.WindZone zone = wind.AddComponent<Morphoria.WindZone>();
         zone.windVelocity = new Vector3(0f, 18f, 2.5f);
     }
 
