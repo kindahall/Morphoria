@@ -931,6 +931,27 @@ public static class MorphoriaSceneBuilder
         return AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Morphoria/Prefabs/Characters/" + name + ".prefab");
     }
 
+    private static GameObject InstantiateCharacterPrefab(string name, Transform parent)
+    {
+        GameObject prefab = LoadCharacterPrefab(name);
+        if (prefab == null)
+        {
+            return null;
+        }
+
+        GameObject instance = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+        if (instance == null)
+        {
+            return null;
+        }
+
+        instance.transform.SetParent(parent, false);
+        instance.transform.localPosition = Vector3.zero;
+        instance.transform.localRotation = Quaternion.identity;
+        instance.transform.localScale = Vector3.one;
+        return instance;
+    }
+
     private static Camera CreateCamera(Transform target)
     {
         GameObject cameraObject = new GameObject("ThirdPersonCamera");
@@ -1050,25 +1071,40 @@ public static class MorphoriaSceneBuilder
 
     private static MiniBoss CreateMiniBoss(Vector3 position, Transform parent)
     {
-        GameObject boss = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+        GameObject boss = new GameObject("MiniBoss_Garde_Cage");
         boss.name = "MiniBoss_Garde_Cage";
         boss.transform.SetParent(parent, false);
         boss.transform.position = position;
-        boss.transform.localScale = new Vector3(1.4f, 1.55f, 1.4f);
-        boss.GetComponent<Renderer>().sharedMaterial = darkRockMat;
-        Collider collider = boss.GetComponent<Collider>();
+        CapsuleCollider collider = boss.AddComponent<CapsuleCollider>();
         collider.isTrigger = true;
+        collider.radius = 0.92f;
+        collider.height = 2.9f;
+        collider.center = new Vector3(0f, 1.35f, 0f);
 
         MiniBoss miniBoss = boss.AddComponent<MiniBoss>();
         miniBoss.maxHealth = 4;
-        miniBoss.renderers = boss.GetComponentsInChildren<Renderer>();
         miniBoss.patrolPoints = new[]
         {
             CreateMarker("Boss_Patrol_A", new Vector3(41.5f, 1.05f, -3.5f), parent),
             CreateMarker("Boss_Patrol_B", new Vector3(48.5f, 1.05f, 3.5f), parent)
         };
 
-        CreateCube("Garde_Cage_Cadenas", new Vector3(0f, 1.2f, -0.75f), new Vector3(0.75f, 0.55f, 0.22f), prismMat, boss.transform);
+        GameObject noctar = InstantiateCharacterPrefab("PF_Noctar", boss.transform);
+        if (noctar != null)
+        {
+            noctar.name = "Noctar_Boss_Visual";
+            noctar.transform.localPosition = new Vector3(0f, -0.08f, 0f);
+            noctar.transform.localScale = new Vector3(1.05f, 1.05f, 1.05f);
+            DestroyCollidersImmediate(noctar);
+        }
+        else
+        {
+            GameObject fallback = CreateCylinder("Noctar_Boss_Fallback", new Vector3(0f, 1.35f, 0f), new Vector3(0.9f, 1.45f, 0.9f), darkRockMat, boss.transform, Quaternion.identity);
+            DestroyColliderImmediate(fallback);
+        }
+
+        CreateCube("Garde_Cage_Cadenas", new Vector3(0f, 1.35f, -0.75f), new Vector3(0.75f, 0.55f, 0.22f), prismMat, boss.transform);
+        miniBoss.renderers = boss.GetComponentsInChildren<Renderer>();
         return miniBoss;
     }
 
@@ -1253,6 +1289,15 @@ public static class MorphoriaSceneBuilder
         if (collider != null)
         {
             UnityEngine.Object.DestroyImmediate(collider);
+        }
+    }
+
+    private static void DestroyCollidersImmediate(GameObject gameObject)
+    {
+        Collider[] colliders = gameObject.GetComponentsInChildren<Collider>(true);
+        for (int i = 0; i < colliders.Length; i++)
+        {
+            UnityEngine.Object.DestroyImmediate(colliders[i]);
         }
     }
 }

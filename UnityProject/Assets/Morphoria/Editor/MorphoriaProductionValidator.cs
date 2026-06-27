@@ -183,6 +183,11 @@ public static class MorphoriaProductionValidator
         RequireAtLeast<Checkpoint>(sceneName, 1, issues);
         RequireAtLeast<MorphoriaEnemy>(sceneName, 2, issues);
         RequireAtLeast<MorphoriaCollectible>(sceneName, 8, issues);
+        if (level.targetVillagers > 0)
+        {
+            RequireOne<MiniBoss>(sceneName, issues);
+            ValidateMiniBossVisual(sceneName, issues);
+        }
 
         LevelExit[] exits = UnityEngine.Object.FindObjectsByType<LevelExit>(FindObjectsInactive.Include);
         VillagerCage[] cages = UnityEngine.Object.FindObjectsByType<VillagerCage>(FindObjectsInactive.Include);
@@ -237,6 +242,38 @@ public static class MorphoriaProductionValidator
             if (exits[i].requiredVillagers > cages.Length)
             {
                 issues.Add(sceneName + ": exit requires " + exits[i].requiredVillagers + " villagers but scene has " + cages.Length + " cage(s).");
+            }
+        }
+    }
+
+    private static void ValidateMiniBossVisual(string sceneName, List<string> issues)
+    {
+        MiniBoss[] bosses = UnityEngine.Object.FindObjectsByType<MiniBoss>(FindObjectsInactive.Include);
+        for (int i = 0; i < bosses.Length; i++)
+        {
+            MiniBoss boss = bosses[i];
+            CapsuleCollider collider = boss.GetComponent<CapsuleCollider>();
+            if (collider == null || !collider.isTrigger)
+            {
+                issues.Add(sceneName + ": mini-boss needs a trigger CapsuleCollider.");
+            }
+
+            if (boss.renderers == null || boss.renderers.Length < 5)
+            {
+                issues.Add(sceneName + ": mini-boss renderer list does not include the Noctar visual.");
+            }
+
+            Transform visual = boss.transform.Find("Noctar_Boss_Visual");
+            if (visual == null)
+            {
+                issues.Add(sceneName + ": mini-boss is missing Noctar_Boss_Visual.");
+                continue;
+            }
+
+            string prefabPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(visual.gameObject);
+            if (prefabPath != "Assets/Morphoria/Prefabs/Characters/PF_Noctar.prefab")
+            {
+                issues.Add(sceneName + ": mini-boss visual is not linked to PF_Noctar.prefab.");
             }
         }
     }
