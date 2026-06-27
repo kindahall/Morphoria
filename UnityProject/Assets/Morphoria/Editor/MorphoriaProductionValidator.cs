@@ -170,6 +170,7 @@ public static class MorphoriaProductionValidator
         RequireOne<ThirdPersonCamera>(sceneName, issues);
         RequireOne<MorphoriaHud>(sceneName, issues);
         RequireOne<MorphoriaPauseMenu>(sceneName, issues);
+        RequireOne<MorphoriaLevelResultScreen>(sceneName, issues);
         RequireOne<LevelExit>(sceneName, issues);
         RequireAtLeast<MorphoriaCollectible>(sceneName, 8, issues);
 

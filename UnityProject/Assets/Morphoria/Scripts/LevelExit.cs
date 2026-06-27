@@ -31,8 +31,16 @@ namespace Morphoria
             completing = true;
             player.ShowFeedback("Niveau termine");
             MorphoriaGameSession session = MorphoriaGameSession.GetOrCreate();
-            session.MarkCurrentLevelComplete(player.Inventory.GoldenStars, player.Inventory.PrismObjectivesCollected, player.Inventory.VillagersSaved);
-            session.LoadSceneAfterDelay(MorphoriaGameContent.HubScene, 1.35f);
+            MorphoriaLevelClearResult result = session.MarkCurrentLevelComplete(player.Inventory.GoldenStars, player.Inventory.PrismObjectivesCollected, player.Inventory.VillagersSaved);
+            MorphoriaLevelResultScreen resultScreen = FindAnyObjectByType<MorphoriaLevelResultScreen>();
+            if (resultScreen != null)
+            {
+                resultScreen.Show(result);
+            }
+            else
+            {
+                session.LoadSceneAfterDelay(MorphoriaGameContent.HubScene, 1.35f);
+            }
         }
     }
 }

@@ -78,6 +78,7 @@ public static class MorphoriaSceneBuilder
         MorphoriaHud hud = CreateHud(player);
         ConfigureHudForLevel(hud, MorphoriaGameContent.Levels[0]);
         CreatePauseMenu();
+        CreateLevelResultScreen();
 
         Vector3[] path =
         {
@@ -324,6 +325,7 @@ public static class MorphoriaSceneBuilder
         hud.objective = level.targetVillagers > 0 ? "Liberez les villageois" : "Atteignez le portail";
         ConfigureHudForLevel(hud, level);
         CreatePauseMenu();
+        CreateLevelResultScreen();
 
         Material primary = GetPrimaryMaterial(level);
         Material secondary = GetSecondaryMaterial(level);
@@ -567,6 +569,11 @@ public static class MorphoriaSceneBuilder
     private static void CreatePauseMenu()
     {
         new GameObject("PauseMenu").AddComponent<MorphoriaPauseMenu>();
+    }
+
+    private static void CreateLevelResultScreen()
+    {
+        new GameObject("Level_Result_Screen").AddComponent<MorphoriaLevelResultScreen>();
     }
 
     private static void CreateScenePortal(string name, Vector3 position, string label, string targetScene, string targetLevelId, Transform parent)

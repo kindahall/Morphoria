@@ -11,6 +11,7 @@ namespace Morphoria
 
         public MorphoriaSaveData SaveData { get; private set; }
         public string StatusText { get; private set; }
+        public MorphoriaLevelClearResult LastClearResult { get; private set; }
 
         public bool CanContinue => MorphoriaSaveSystem.SaveExists();
 
@@ -129,16 +130,25 @@ namespace Morphoria
             StartCoroutine(DelayedLoadSceneRoutine(sceneName, delaySeconds));
         }
 
-        public void MarkCurrentLevelComplete(int goldenStars, int prismStars, int villagersSaved)
+        public MorphoriaLevelClearResult MarkCurrentLevelComplete(int goldenStars, int prismStars, int villagersSaved)
         {
             MorphoriaLevelInfo level = MorphoriaGameContent.GetLevel(SaveData.currentLevelId);
-            MarkLevelComplete(level.id, goldenStars, prismStars, villagersSaved);
+            return MarkLevelComplete(level.id, goldenStars, prismStars, villagersSaved);
         }
 
-        public void MarkLevelComplete(string levelId, int goldenStars, int prismStars, int villagersSaved)
+        public MorphoriaLevelClearResult MarkLevelComplete(string levelId, int goldenStars, int prismStars, int villagersSaved)
         {
             MorphoriaLevelInfo level = MorphoriaGameContent.GetLevel(levelId);
             MorphoriaLevelProgress progress = MorphoriaSaveSystem.GetProgress(SaveData, level.id);
+            MorphoriaLevelInfo next = MorphoriaGameContent.GetNextLevel(level.id);
+            MorphoriaLevelProgress nextProgress = next != null ? MorphoriaSaveSystem.GetProgress(SaveData, next.id) : null;
+
+            bool firstClear = !progress.completed;
+            bool newBest =
+                goldenStars > progress.bestGoldenStars ||
+                prismStars > progress.bestPrismStars ||
+                villagersSaved > progress.bestVillagers;
+            bool unlockedNext = nextProgress != null && !nextProgress.unlocked;
 
             progress.completed = true;
             progress.clears++;
@@ -146,10 +156,9 @@ namespace Morphoria
             progress.bestPrismStars = Mathf.Max(progress.bestPrismStars, prismStars);
             progress.bestVillagers = Mathf.Max(progress.bestVillagers, villagersSaved);
 
-            MorphoriaLevelInfo next = MorphoriaGameContent.GetNextLevel(level.id);
             if (next != null)
             {
-                MorphoriaSaveSystem.GetProgress(SaveData, next.id).unlocked = true;
+                nextProgress.unlocked = true;
             }
             else
             {
@@ -158,7 +167,24 @@ namespace Morphoria
 
             SaveData.lastScene = MorphoriaGameContent.HubScene;
             StatusText = level.displayName + " termine";
+            LastClearResult = new MorphoriaLevelClearResult
+            {
+                levelId = level.id,
+                levelName = level.displayName,
+                rank = RankFor(level, goldenStars, prismStars, villagersSaved),
+                nextLevelName = next != null ? next.displayName : string.Empty,
+                firstClear = firstClear,
+                newBest = newBest,
+                unlockedNextLevel = unlockedNext,
+                goldenStars = goldenStars,
+                targetGoldenStars = level.targetGoldenStars,
+                prismStars = prismStars,
+                targetPrismStars = level.targetPrismStars,
+                villagersSaved = villagersSaved,
+                targetVillagers = level.targetVillagers
+            };
             Save();
+            return LastClearResult;
         }
 
         public void Save()
@@ -171,6 +197,31 @@ namespace Morphoria
         public MorphoriaLevelProgress ProgressFor(string levelId)
         {
             return MorphoriaSaveSystem.GetProgress(SaveData, levelId);
+        }
+
+        private static string RankFor(MorphoriaLevelInfo level, int goldenStars, int prismStars, int villagersSaved)
+        {
+            float goldenRatio = level.targetGoldenStars <= 0 ? 1f : goldenStars / (float)level.targetGoldenStars;
+            float prismRatio = level.targetPrismStars <= 0 ? 1f : prismStars / (float)level.targetPrismStars;
+            float villagerRatio = level.targetVillagers <= 0 ? 1f : villagersSaved / (float)level.targetVillagers;
+            float score = goldenRatio * 0.45f + prismRatio * 0.25f + villagerRatio * 0.3f;
+
+            if (score >= 0.98f)
+            {
+                return "Prisme";
+            }
+
+            if (score >= 0.76f)
+            {
+                return "Or";
+            }
+
+            if (score >= 0.48f)
+            {
+                return "Argent";
+            }
+
+            return "Bronze";
         }
 
         private IEnumerator DelayedLoadSceneRoutine(string sceneName, float delaySeconds)

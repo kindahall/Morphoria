@@ -121,6 +121,24 @@ namespace Morphoria
     }
 
     [Serializable]
+    public sealed class MorphoriaLevelClearResult
+    {
+        public string levelId;
+        public string levelName;
+        public string rank;
+        public string nextLevelName;
+        public bool firstClear;
+        public bool newBest;
+        public bool unlockedNextLevel;
+        public int goldenStars;
+        public int targetGoldenStars;
+        public int prismStars;
+        public int targetPrismStars;
+        public int villagersSaved;
+        public int targetVillagers;
+    }
+
+    [Serializable]
     public sealed class MorphoriaSaveData
     {
         public int version = 1;
