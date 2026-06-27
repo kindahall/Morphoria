@@ -14,11 +14,13 @@ namespace Morphoria
         public int targetPrismStars = 5;
         public int targetVillagers = 4;
 
+        private MorphoriaGameSession session;
         private GUIStyle panelStyle;
         private GUIStyle titleStyle;
         private GUIStyle labelStyle;
         private GUIStyle smallStyle;
         private GUIStyle promptStyle;
+        private GUIStyle assistStyle;
         private Transform guideTarget;
         private string guideLabel = string.Empty;
         private float nextGuideRefresh;
@@ -27,6 +29,11 @@ namespace Morphoria
         private bool lastBossDefeated;
         private string objectivePulse = string.Empty;
         private float objectivePulseUntil;
+
+        private void Awake()
+        {
+            session = MorphoriaGameSession.GetOrCreate();
+        }
 
         private void Update()
         {
@@ -41,6 +48,9 @@ namespace Morphoria
             }
 
             EnsureStyles();
+            MorphoriaSaveData settings = session != null ? session.SaveData : null;
+            bool subtitlesEnabled = settings == null || settings.subtitlesEnabled;
+            bool colorAssistEnabled = settings != null && settings.colorAssist;
             PlayerInventory inventory = player.Inventory;
             FormDefinition form = player.CurrentDefinition;
 
@@ -73,14 +83,17 @@ namespace Morphoria
             DrawGuideMarker(form);
 
             string feedback = player.FeedbackText;
-            if (!string.IsNullOrEmpty(feedback))
+            if (subtitlesEnabled && !string.IsNullOrEmpty(feedback))
             {
                 Rect rect = new Rect(Screen.width * 0.5f - 180f, 28f, 360f, 48f);
                 DrawPanel(rect, form.accent);
                 GUI.Label(new Rect(rect.x + 18f, rect.y + 13f, rect.width - 36f, 24f), feedback, titleStyle);
             }
 
-            DrawObjectivePulse(form, Mathf.Max(128f, Screen.height - 190f));
+            if (subtitlesEnabled)
+            {
+                DrawObjectivePulse(form, Mathf.Max(128f, Screen.height - 190f));
+            }
 
             string prompt = player.InteractionPrompt;
             if (!string.IsNullOrEmpty(prompt))
@@ -105,6 +118,11 @@ namespace Morphoria
             if (player.IsWheelOpen)
             {
                 DrawLargeWheel(player.WheelSelection);
+            }
+
+            if (colorAssistEnabled && !player.IsWheelOpen)
+            {
+                DrawColorAssistMarkers();
             }
         }
 
@@ -277,6 +295,150 @@ namespace Morphoria
                 normal = { textColor = Color.white },
                 alignment = TextAnchor.MiddleCenter
             };
+
+            assistStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 13,
+                fontStyle = FontStyle.Bold,
+                normal = { textColor = Color.white },
+                alignment = TextAnchor.MiddleCenter
+            };
+        }
+
+        private void DrawColorAssistMarkers()
+        {
+            Camera camera = player.mainCamera != null ? player.mainCamera : Camera.main;
+            if (camera == null)
+            {
+                return;
+            }
+
+            DrawGateMarkers(camera);
+            DrawEnemyMarkers(camera);
+            DrawCageMarkers(camera);
+            DrawBossMarker(camera);
+            DrawExitMarkers(camera);
+            DrawPortalMarkers(camera);
+        }
+
+        private void DrawGateMarkers(Camera camera)
+        {
+            AbilityGate[] gates = FindObjectsByType<AbilityGate>();
+            for (int i = 0; i < gates.Length; i++)
+            {
+                if (gates[i] != null && gates[i].gameObject.activeInHierarchy)
+                {
+                    DrawAssistMarker(camera, gates[i].transform.position + Vector3.up * 1.8f, FormCatalog.AbilityLabel(gates[i].requiredAbility), AbilityColor(gates[i].requiredAbility));
+                }
+            }
+        }
+
+        private void DrawEnemyMarkers(Camera camera)
+        {
+            MorphoriaEnemy[] enemies = FindObjectsByType<MorphoriaEnemy>();
+            for (int i = 0; i < enemies.Length; i++)
+            {
+                if (enemies[i] != null && enemies[i].gameObject.activeInHierarchy && !enemies[i].IsDefeated)
+                {
+                    DrawAssistMarker(camera, enemies[i].transform.position + Vector3.up * 1.9f, FormCatalog.AbilityLabel(enemies[i].weakness), AbilityColor(enemies[i].weakness));
+                }
+            }
+        }
+
+        private void DrawCageMarkers(Camera camera)
+        {
+            VillagerCage[] cages = FindObjectsByType<VillagerCage>();
+            for (int i = 0; i < cages.Length; i++)
+            {
+                if (cages[i] != null && cages[i].gameObject.activeInHierarchy && !cages[i].IsOpened)
+                {
+                    DrawAssistMarker(camera, cages[i].transform.position + Vector3.up * 2.2f, "Cage " + FormCatalog.AbilityLabel(cages[i].requiredAbility), AbilityColor(cages[i].requiredAbility));
+                }
+            }
+        }
+
+        private void DrawBossMarker(Camera camera)
+        {
+            if (miniBoss == null || miniBoss.IsDefeated || !miniBoss.gameObject.activeInHierarchy)
+            {
+                return;
+            }
+
+            MorphoriaAbility ability = miniBoss.UsesWeaknessSequence ? miniBoss.CurrentWeakness : MorphoriaAbility.Break;
+            string label = miniBoss.UsesWeaknessSequence ? "Noctar " + FormCatalog.AbilityLabel(ability) : "Boss Pierre/Ciseaux";
+            DrawAssistMarker(camera, miniBoss.transform.position + Vector3.up * 3.2f, label, AbilityColor(ability));
+        }
+
+        private void DrawExitMarkers(Camera camera)
+        {
+            LevelExit[] exits = FindObjectsByType<LevelExit>();
+            for (int i = 0; i < exits.Length; i++)
+            {
+                if (exits[i] == null || !exits[i].gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
+                string label = player.Inventory.VillagersSaved >= exits[i].requiredVillagers
+                    ? "Sortie"
+                    : player.Inventory.VillagersSaved + " / " + exits[i].requiredVillagers;
+                DrawAssistMarker(camera, exits[i].transform.position + Vector3.up * 2.1f, label, new Color(0.25f, 0.78f, 1f));
+            }
+        }
+
+        private void DrawPortalMarkers(Camera camera)
+        {
+            if (showLevelGoals)
+            {
+                return;
+            }
+
+            MorphoriaScenePortal[] portals = FindObjectsByType<MorphoriaScenePortal>();
+            for (int i = 0; i < portals.Length; i++)
+            {
+                if (portals[i] != null && portals[i].gameObject.activeInHierarchy)
+                {
+                    DrawAssistMarker(camera, portals[i].transform.position + Vector3.up * 2.1f, portals[i].label, new Color(0.25f, 0.78f, 1f));
+                }
+            }
+        }
+
+        private void DrawAssistMarker(Camera camera, Vector3 worldPosition, string label, Color color)
+        {
+            if (string.IsNullOrEmpty(label) || Vector3.Distance(player.transform.position, worldPosition) > 26f)
+            {
+                return;
+            }
+
+            Vector3 screen = camera.WorldToScreenPoint(worldPosition);
+            if (screen.z <= 0f)
+            {
+                return;
+            }
+
+            float width = Mathf.Clamp(label.Length * 8f + 34f, 74f, 168f);
+            Rect rect = new Rect(Mathf.Clamp(screen.x - width * 0.5f, 14f, Screen.width - width - 14f), Mathf.Clamp(Screen.height - screen.y - 18f, 112f, Screen.height - 156f), width, 30f);
+            DrawPanel(rect, color);
+            GUI.Label(new Rect(rect.x + 8f, rect.y + 6f, rect.width - 16f, 18f), label, assistStyle);
+        }
+
+        private static Color AbilityColor(MorphoriaAbility ability)
+        {
+            switch (ability)
+            {
+                case MorphoriaAbility.Break:
+                case MorphoriaAbility.PushHeavy:
+                case MorphoriaAbility.ResistWind:
+                    return FormCatalog.Get(MorphoriaForm.Stone).accent;
+                case MorphoriaAbility.Glide:
+                    return FormCatalog.Get(MorphoriaForm.Leaf).accent;
+                case MorphoriaAbility.Fold:
+                    return FormCatalog.Get(MorphoriaForm.Paper).accent;
+                case MorphoriaAbility.Cut:
+                    return FormCatalog.Get(MorphoriaForm.Scissors).accent;
+                default:
+                    return Color.white;
+            }
         }
 
         private void DrawGuideMarker(FormDefinition form)

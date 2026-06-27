@@ -425,7 +425,7 @@ namespace Morphoria
             GUILayout.Label("Camera  " + sensitivity.ToString("0.00") + "x");
 
             bool colorAssist = GUILayout.Toggle(data.colorAssist, "Aide couleur");
-            bool subtitles = GUILayout.Toggle(data.subtitlesEnabled, "Sous-titres");
+            bool subtitles = GUILayout.Toggle(data.subtitlesEnabled, "Textes feedback");
             bool reduceMotion = GUILayout.Toggle(data.reduceMotion, "Mouvements reduits");
 
             bool changed =

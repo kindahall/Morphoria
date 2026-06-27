@@ -65,6 +65,8 @@
 - Defeating Noctar uses Noctar-specific feedback.
 - Saving the final villager shows portal-ready feedback.
 - Blocked exit tells how many villagers remain.
+- `Aide couleur` adds readable form markers above nearby gates, enemies, cages, exits, and hub portals.
+- `Textes feedback` controls the temporary feedback captions without hiding prompts or objectives.
 
 ## Audio Feedback
 
