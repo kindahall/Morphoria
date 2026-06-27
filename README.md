@@ -41,6 +41,22 @@ If the scene is not created automatically, run:
 
 Then press Play.
 
+## Local Mac Build
+
+From Unity, run:
+
+`Morphoria > Build > Mac Playtest App`
+
+From command line, run:
+
+```bash
+"/Applications/Unity/Hub/Editor/6000.4.4f1/Unity.app/Contents/MacOS/Unity" -batchmode -quit -projectPath "$PWD/UnityProject" -executeMethod MorphoriaBuildPipeline.BuildMacPlaytestAppBatch -logFile /tmp/morphoria_mac_build.log
+```
+
+The app is generated in:
+
+`Builds/Morphoria-macOS/Morphoria.app`
+
 ## Asset Pipeline
 
 Read:
