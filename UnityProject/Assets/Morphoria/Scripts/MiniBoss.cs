@@ -11,8 +11,10 @@ namespace Morphoria
         public float chargeDistance = 8f;
         public Transform[] patrolPoints;
         public Renderer[] renderers;
+        public MorphoriaAbility[] weaknessSequence;
 
         private int health;
+        private int sequenceIndex;
         private int patrolIndex;
         private MorphoriaPlayer target;
         private float attackCooldown;
@@ -20,9 +22,16 @@ namespace Morphoria
 
         public int Health => health;
         public bool IsDefeated => defeated;
+        public MorphoriaAbility CurrentWeakness => CurrentRequiredAbility();
+        public bool UsesWeaknessSequence => HasWeaknessSequence();
 
         private void Awake()
         {
+            if (weaknessSequence != null && weaknessSequence.Length > 0)
+            {
+                maxHealth = weaknessSequence.Length;
+            }
+
             health = maxHealth;
         }
 
@@ -100,12 +109,27 @@ namespace Morphoria
 
         public bool CanInteract(FormDefinition form)
         {
-            return !defeated && (form.canBreak || form.canCut);
+            if (defeated)
+            {
+                return false;
+            }
+
+            if (!HasWeaknessSequence())
+            {
+                return form.canBreak || form.canCut;
+            }
+
+            return FormCatalog.HasAbility(form, CurrentRequiredAbility());
         }
 
         public string Hint(FormDefinition form)
         {
-            return "Pierre ou Ciseaux";
+            if (!HasWeaknessSequence())
+            {
+                return "Pierre ou Ciseaux";
+            }
+
+            return FormCatalog.AbilityLabel(CurrentRequiredAbility());
         }
 
         public void Interact(MorphoriaPlayer player)
@@ -116,8 +140,15 @@ namespace Morphoria
                 return;
             }
 
+            MorphoriaAbility resolvedWeakness = HasWeaknessSequence()
+                ? CurrentRequiredAbility()
+                : player.CurrentDefinition.canBreak ? MorphoriaAbility.Break : MorphoriaAbility.Cut;
             health--;
-            player.ShowFeedback(player.CurrentDefinition.canBreak ? "Impact Rokko" : "Coupe Cizo");
+            if (HasWeaknessSequence())
+            {
+                sequenceIndex++;
+            }
+            player.ShowFeedback(HasWeaknessSequence() ? "Noctar : " + FormCatalog.AbilityLabel(resolvedWeakness) : "Garde-Cage");
             Pulse(player.CurrentDefinition.accent);
             MorphoriaFeedbackSystem.GetOrCreate().Play(MorphoriaFeedbackCue.BossHit, transform.position + Vector3.up, player.CurrentDefinition.accent, 0.86f);
 
@@ -128,6 +159,22 @@ namespace Morphoria
                 gameObject.SetActive(false);
                 player.ShowFeedback("Garde-Cage vaincu");
             }
+        }
+
+        private MorphoriaAbility CurrentRequiredAbility()
+        {
+            if (!HasWeaknessSequence())
+            {
+                return MorphoriaAbility.Break;
+            }
+
+            int index = Mathf.Clamp(sequenceIndex, 0, weaknessSequence.Length - 1);
+            return weaknessSequence[index];
+        }
+
+        private bool HasWeaknessSequence()
+        {
+            return weaknessSequence != null && weaknessSequence.Length > 0;
         }
 
         private void Pulse(Color color)

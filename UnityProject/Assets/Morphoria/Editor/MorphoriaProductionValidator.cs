@@ -413,7 +413,63 @@ public static class MorphoriaProductionValidator
             {
                 issues.Add(sceneName + ": mini-boss visual is not linked to PF_Noctar.prefab.");
             }
+
+            MorphoriaLevelInfo level = MorphoriaGameContent.GetLevelByScene(sceneName);
+            if (level != null && level.worldId == "fortress")
+            {
+                ValidateNoctarFinalSequence(sceneName, boss, issues);
+            }
+            else if (boss.weaknessSequence != null && boss.weaknessSequence.Length > 0)
+            {
+                issues.Add(sceneName + ": only the Noctar fortress boss should use a weakness sequence.");
+            }
         }
+    }
+
+    private static void ValidateNoctarFinalSequence(string sceneName, MiniBoss boss, List<string> issues)
+    {
+        MorphoriaAbility[] sequence = boss.weaknessSequence;
+        if (sequence == null || sequence.Length < 4)
+        {
+            issues.Add(sceneName + ": Noctar final boss needs a four-form weakness sequence.");
+            return;
+        }
+
+        bool hasStone = ContainsAbility(sequence, MorphoriaAbility.Break);
+        bool hasLeaf = ContainsAbility(sequence, MorphoriaAbility.Glide);
+        bool hasPaper = ContainsAbility(sequence, MorphoriaAbility.Fold);
+        bool hasScissors = ContainsAbility(sequence, MorphoriaAbility.Cut);
+        if (!hasStone || !hasLeaf || !hasPaper || !hasScissors)
+        {
+            issues.Add(sceneName + ": Noctar final boss sequence must use Stone, Leaf, Paper, and Scissors.");
+        }
+
+        if (boss.maxHealth != sequence.Length)
+        {
+            issues.Add(sceneName + ": Noctar final boss health must match its weakness sequence length.");
+        }
+
+        string[] runeNames = { "Noctar_Rune_Rokko", "Noctar_Rune_Luma", "Noctar_Rune_Papyra", "Noctar_Rune_Cizo" };
+        for (int i = 0; i < runeNames.Length; i++)
+        {
+            if (GameObject.Find(runeNames[i]) == null)
+            {
+                issues.Add(sceneName + ": missing final boss rune " + runeNames[i] + ".");
+            }
+        }
+    }
+
+    private static bool ContainsAbility(MorphoriaAbility[] abilities, MorphoriaAbility ability)
+    {
+        for (int i = 0; i < abilities.Length; i++)
+        {
+            if (abilities[i] == ability)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void ValidateThirdPersonCamera(string sceneName, List<string> issues)

@@ -414,7 +414,27 @@ public static class MorphoriaSceneBuilder
         if (level.targetVillagers > 0)
         {
             MiniBoss boss = CreateMiniBoss(new Vector3(22f, 1.2f, 1.4f), root);
-            boss.maxHealth = level.worldId == "fortress" ? 6 : 3;
+            if (level.worldId == "fortress")
+            {
+                boss.weaknessSequence = new[]
+                {
+                    MorphoriaAbility.Break,
+                    MorphoriaAbility.Glide,
+                    MorphoriaAbility.Fold,
+                    MorphoriaAbility.Cut,
+                    MorphoriaAbility.Break,
+                    MorphoriaAbility.Cut
+                };
+                boss.maxHealth = boss.weaknessSequence.Length;
+                boss.moveSpeed = 3.15f;
+                boss.chargeDistance = 10.5f;
+                CreateBossWeaknessRunes(new Vector3(22f, 1.12f, 1.4f), root);
+            }
+            else
+            {
+                boss.maxHealth = 3;
+            }
+
             hud.miniBoss = boss;
             CreateAdventureCages(level, boss, cages);
         }
@@ -1120,6 +1140,20 @@ public static class MorphoriaSceneBuilder
         light.color = new Color(0.2f, 0.75f, 1f);
         light.range = 7f;
         light.intensity = 2.2f;
+    }
+
+    private static void CreateBossWeaknessRunes(Vector3 center, Transform parent)
+    {
+        CreateWeaknessRune("Noctar_Rune_Rokko", center + new Vector3(-2.7f, -0.46f, 0f), stoneMat, "Pierre", parent);
+        CreateWeaknessRune("Noctar_Rune_Luma", center + new Vector3(0f, -0.46f, 2.7f), leafMat, "Feuille", parent);
+        CreateWeaknessRune("Noctar_Rune_Papyra", center + new Vector3(2.7f, -0.46f, 0f), paperMat, "Papier", parent);
+        CreateWeaknessRune("Noctar_Rune_Cizo", center + new Vector3(0f, -0.46f, -2.7f), scissorsMat, "Ciseaux", parent);
+    }
+
+    private static void CreateWeaknessRune(string name, Vector3 position, Material material, string label, Transform parent)
+    {
+        CreateCylinder(name, position, new Vector3(0.78f, 0.06f, 0.78f), material, parent, Quaternion.identity);
+        CreateLabel(label, position + new Vector3(0f, 0.16f, -0.62f), material.color, parent);
     }
 
     private static MiniBoss CreateMiniBoss(Vector3 position, Transform parent)

@@ -82,7 +82,10 @@ namespace Morphoria
             if (miniBoss != null && !miniBoss.IsDefeated)
             {
                 DrawPanel(new Rect(Screen.width * 0.5f - 170f, Screen.height - 70f, 340f, 42f), new Color(0.63f, 0.23f, 0.95f));
-                GUI.Label(new Rect(Screen.width * 0.5f - 150f, Screen.height - 60f, 300f, 24f), "Garde-Cage  " + miniBoss.Health + " / " + miniBoss.maxHealth, labelStyle);
+                string bossLabel = miniBoss.UsesWeaknessSequence
+                    ? "Noctar  " + FormCatalog.AbilityLabel(miniBoss.CurrentWeakness) + "  " + miniBoss.Health + " / " + miniBoss.maxHealth
+                    : "Garde-Cage  " + miniBoss.Health + " / " + miniBoss.maxHealth;
+                GUI.Label(new Rect(Screen.width * 0.5f - 150f, Screen.height - 60f, 300f, 24f), bossLabel, labelStyle);
             }
 
             DrawCompactWheel(form);
