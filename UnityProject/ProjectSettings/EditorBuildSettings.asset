@@ -6,6 +6,30 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Morphoria/Scenes/MainMenu.unity
+    guid: 41545e3ad77ab406a82109c2e67edcc1
+  - enabled: 1
+    path: Assets/Morphoria/Scenes/VillageEcloriaHub.unity
+    guid: 46c5ec9b6a62d4b1bba03182669a37ef
+  - enabled: 1
+    path: Assets/Morphoria/Scenes/WorldMap.unity
+    guid: 0e0064116e18046588f3131348048aba
+  - enabled: 1
     path: Assets/Morphoria/Scenes/LePontDesQuatreFormes.unity
     guid: c36a4244b12ea472ea2e267e002f44f6
+  - enabled: 1
+    path: Assets/Morphoria/Scenes/CanyonFracturePass.unity
+    guid: 3a041be5f52284032a1f0a11436d710d
+  - enabled: 1
+    path: Assets/Morphoria/Scenes/JardinsSuspendusVent.unity
+    guid: 7f9cfcee56c424dfb9634fb7db9b30c8
+  - enabled: 1
+    path: Assets/Morphoria/Scenes/ArchivesOrigami.unity
+    guid: 571860ef963dd4dc1ad9298686057278
+  - enabled: 1
+    path: Assets/Morphoria/Scenes/ForgeDesLames.unity
+    guid: 96ec6d90cd78b4791a6317ac4e6630fd
+  - enabled: 1
+    path: Assets/Morphoria/Scenes/ForteresseCageNoctar.unity
+    guid: 3b255867372d44b30897ca131ba4a199
   m_configObjects: {}

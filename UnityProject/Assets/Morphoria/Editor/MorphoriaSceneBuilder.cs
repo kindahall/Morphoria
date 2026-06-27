@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Morphoria;
 using UnityEditor;
@@ -9,6 +10,9 @@ using UnityEngine.SceneManagement;
 
 public static class MorphoriaSceneBuilder
 {
+    private const string MainMenuPath = "Assets/Morphoria/Scenes/MainMenu.unity";
+    private const string HubPath = "Assets/Morphoria/Scenes/VillageEcloriaHub.unity";
+    private const string WorldMapPath = "Assets/Morphoria/Scenes/WorldMap.unity";
     private const string ScenePath = "Assets/Morphoria/Scenes/LePontDesQuatreFormes.unity";
     private const string MaterialFolder = "Assets/Morphoria/Materials";
 
@@ -30,9 +34,10 @@ public static class MorphoriaSceneBuilder
         EditorApplication.delayCall += () =>
         {
             string absoluteScenePath = Path.Combine(Directory.GetCurrentDirectory(), ScenePath);
-            if (!Application.isBatchMode && !File.Exists(absoluteScenePath))
+            string absoluteMenuPath = Path.Combine(Directory.GetCurrentDirectory(), MainMenuPath);
+            if (!Application.isBatchMode && (!File.Exists(absoluteScenePath) || !File.Exists(absoluteMenuPath)))
             {
-                BuildVerticalSliceScene();
+                BuildGameShellScenes();
             }
         };
     }
@@ -40,11 +45,16 @@ public static class MorphoriaSceneBuilder
     [MenuItem("Morphoria/Build Vertical Slice Scene")]
     public static void BuildVerticalSliceScene()
     {
+        BuildVerticalSliceScene(true);
+    }
+
+    private static void BuildVerticalSliceScene(bool updateBuildSettings)
+    {
         EnsureFolders();
         CreateMaterials();
 
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-        scene.name = "Le Pont des Quatre Formes";
+        scene.name = MorphoriaGameContent.LevelOneScene;
 
         RenderSettings.ambientLight = new Color(0.48f, 0.55f, 0.68f);
         RenderSettings.fog = true;
@@ -66,6 +76,7 @@ public static class MorphoriaSceneBuilder
         Camera camera = CreateCamera(player.transform);
         player.mainCamera = camera;
         MorphoriaHud hud = CreateHud(player);
+        CreatePauseMenu();
 
         Vector3[] path =
         {
@@ -143,9 +154,447 @@ public static class MorphoriaSceneBuilder
 
         Selection.activeGameObject = player.gameObject;
         EditorSceneManager.SaveScene(scene, ScenePath);
-        EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
+        if (updateBuildSettings)
+        {
+            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
+        }
+
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
+    }
+
+    [MenuItem("Morphoria/Build Game Shell Scenes")]
+    public static void BuildGameShellScenes()
+    {
+        EnsureFolders();
+        CreateMaterials();
+
+        BuildMainMenuScene();
+        BuildHubScene();
+        BuildWorldMapScene();
+        BuildVerticalSliceScene(false);
+
+        for (int i = 1; i < MorphoriaGameContent.Levels.Length; i++)
+        {
+            BuildAdventureLevelScene(MorphoriaGameContent.Levels[i]);
+        }
+
+        ApplyBuildSettings();
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+    }
+
+    private static void BuildMainMenuScene()
+    {
+        Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        scene.name = MorphoriaGameContent.MainMenuScene;
+        ConfigureRenderSettings(new Color(0.46f, 0.67f, 0.86f), new Color(0.38f, 0.62f, 0.82f), 0.011f);
+        CreateLighting();
+        CreateShellCamera("MainMenuCamera", new Vector3(0f, 5.2f, -12f), new Vector3(0f, 1.4f, 0f), new Color(0.09f, 0.13f, 0.19f), 48f);
+
+        Transform root = new GameObject("Morphoria_MainMenu_Set").transform;
+        CreateIsland("Menu_Island_Ecloria", new Vector3(0f, -0.4f, 0f), new Vector3(11f, 1f, 7f), neutralMat, root);
+        CreateCube("Menu_Prism_Core", new Vector3(0f, 1.2f, 0.3f), new Vector3(1.1f, 2.1f, 1.1f), prismMat, root).transform.rotation = Quaternion.Euler(0f, 26f, 45f);
+        CreateCylinder("Menu_Portal_Ring", new Vector3(0f, 1.8f, 0.2f), new Vector3(2.6f, 0.08f, 2.6f), crystalMat, root, Quaternion.Euler(90f, 0f, 0f));
+        CreateTitleText("Morphoria", new Vector3(0f, 3.5f, 0.4f), 0.78f, crystalMat.color, root);
+
+        CreateFormStatue("Menu_Rokko", new Vector3(-4.1f, 0.45f, -0.2f), stoneMat, root);
+        CreateFormStatue("Menu_Luma", new Vector3(-1.35f, 0.45f, 1.9f), leafMat, root);
+        CreateFormStatue("Menu_Papyra", new Vector3(1.35f, 0.45f, 1.9f), paperMat, root);
+        CreateFormStatue("Menu_Cizo", new Vector3(4.1f, 0.45f, -0.2f), scissorsMat, root);
+
+        GameObject controller = new GameObject("MainMenu_Controller");
+        controller.AddComponent<MorphoriaMenuScreen>();
+
+        EditorSceneManager.SaveScene(scene, MainMenuPath);
+    }
+
+    private static void BuildHubScene()
+    {
+        Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        scene.name = MorphoriaGameContent.HubScene;
+        ConfigureRenderSettings(new Color(0.52f, 0.72f, 0.9f), new Color(0.58f, 0.74f, 0.9f), 0.009f);
+        CreateLighting();
+
+        Transform root = new GameObject("Village_Ecloria_Hub").transform;
+        Transform village = new GameObject("Village_Plaza").transform;
+        village.SetParent(root);
+
+        MorphoriaPlayer player = CreatePlayer();
+        player.transform.position = new Vector3(0f, 2.1f, -1.5f);
+        Camera camera = CreateCamera(player.transform);
+        player.mainCamera = camera;
+        MorphoriaHud hud = CreateHud(player);
+        hud.objective = "Choisissez une destination";
+        CreatePauseMenu();
+        new GameObject("Hub_State").AddComponent<MorphoriaHubState>();
+
+        CreateIsland("Hub_Place_Centrale", new Vector3(0f, 0f, 0f), new Vector3(15f, 1f, 12f), neutralMat, village);
+        CreateIsland("Hub_Atelier_Assets", new Vector3(-10f, 0f, 3.2f), new Vector3(6f, 1f, 5f), paperMat, village);
+        CreateIsland("Hub_Jardin_Luma", new Vector3(10f, 0f, 3.2f), new Vector3(6f, 1f, 5f), leafMat, village);
+        CreateBridge("Hub_Pont_Atelier", new Vector3(-5f, 0.1f, 1.8f), new Vector3(5f, 0.28f, 1.7f), paperMat, village);
+        CreateBridge("Hub_Pont_Jardin", new Vector3(5f, 0.1f, 1.8f), new Vector3(5f, 0.28f, 1.7f), leafMat, village);
+
+        CreateCube("Hub_Coeur_Prismatique", new Vector3(0f, 1.55f, 2.4f), new Vector3(1.25f, 2.2f, 1.25f), prismMat, village).transform.rotation = Quaternion.Euler(0f, 38f, 45f);
+        CreateVillageHouse("Maison_Rokko", new Vector3(-5.1f, 0.75f, -3.4f), stoneMat, village);
+        CreateVillageHouse("Maison_Luma", new Vector3(-1.8f, 0.75f, -4.6f), leafMat, village);
+        CreateVillageHouse("Maison_Papyra", new Vector3(1.8f, 0.75f, -4.6f), paperMat, village);
+        CreateVillageHouse("Maison_Cizo", new Vector3(5.1f, 0.75f, -3.4f), scissorsMat, village);
+
+        CreateScenePortal("Portail_CarteDuMonde", new Vector3(0f, 1.1f, 5.2f), "Carte du monde", MorphoriaGameContent.WorldMapScene, string.Empty, root);
+        CreateScenePortal("Portail_PontQuatreFormes", new Vector3(-6.4f, 1.1f, 1.1f), "Pont des Quatre Formes", string.Empty, MorphoriaGameContent.Levels[0].id, root);
+        CreateScenePortal("Portail_DernierNiveauDebloque", new Vector3(6.4f, 1.1f, 1.1f), "Carte des niveaux", MorphoriaGameContent.WorldMapScene, string.Empty, root);
+
+        CreateLabel("VILLAGE", new Vector3(0f, 1.1f, -5.2f), goldMat.color, root);
+        CreateDecor(root);
+
+        Selection.activeGameObject = player.gameObject;
+        EditorSceneManager.SaveScene(scene, HubPath);
+    }
+
+    private static void BuildWorldMapScene()
+    {
+        Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        scene.name = MorphoriaGameContent.WorldMapScene;
+        ConfigureRenderSettings(new Color(0.38f, 0.54f, 0.76f), new Color(0.34f, 0.5f, 0.72f), 0.006f);
+        CreateLighting();
+        CreateShellCamera("WorldMapCamera", new Vector3(0f, 15f, -14f), new Vector3(0f, 0f, 0f), new Color(0.08f, 0.12f, 0.18f), 42f);
+
+        Transform root = new GameObject("WorldMap_Table").transform;
+        CreateIsland("Carte_Table_Cristal", new Vector3(0f, -0.4f, 0f), new Vector3(20f, 0.6f, 10f), darkRockMat, root);
+
+        Vector3[] nodes =
+        {
+            new Vector3(-8f, 0.35f, 0f),
+            new Vector3(-4.8f, 0.35f, 2.4f),
+            new Vector3(-1.6f, 0.35f, -1.8f),
+            new Vector3(1.8f, 0.35f, 1.9f),
+            new Vector3(5.1f, 0.35f, -1.4f),
+            new Vector3(8f, 0.35f, 0.9f)
+        };
+
+        for (int i = 0; i < nodes.Length; i++)
+        {
+            MorphoriaLevelInfo level = MorphoriaGameContent.Levels[i];
+            MorphoriaWorldInfo world = MorphoriaGameContent.GetWorld(level.worldId);
+            Material material = GetPrimaryMaterial(level);
+            CreateCylinder("Map_Node_" + level.sceneName, nodes[i], new Vector3(0.72f, 0.16f, 0.72f), material, root, Quaternion.identity);
+            CreateLabel((i + 1).ToString(), nodes[i] + new Vector3(0f, 0.26f, -0.38f), world.color, root);
+
+            if (i > 0)
+            {
+                Vector3 midpoint = (nodes[i - 1] + nodes[i]) * 0.5f;
+                float length = Vector3.Distance(nodes[i - 1], nodes[i]);
+                GameObject route = CreateCube("Map_Route_" + i, midpoint, new Vector3(0.18f, 0.08f, length), crystalMat, root);
+                route.transform.rotation = Quaternion.LookRotation(nodes[i] - nodes[i - 1], Vector3.up);
+            }
+        }
+
+        GameObject controller = new GameObject("WorldMap_Controller");
+        controller.AddComponent<MorphoriaWorldMapScreen>();
+        EditorSceneManager.SaveScene(scene, WorldMapPath);
+    }
+
+    private static void BuildAdventureLevelScene(MorphoriaLevelInfo level)
+    {
+        Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        scene.name = level.sceneName;
+        Color fog = Color.Lerp(GetPrimaryMaterial(level).color, new Color(0.55f, 0.72f, 0.92f), 0.58f);
+        ConfigureRenderSettings(fog, fog, 0.0085f);
+        CreateLighting();
+
+        Transform root = new GameObject(level.sceneName + "_Adventure").transform;
+        Transform environment = new GameObject("Floating_Islands").transform;
+        Transform obstacles = new GameObject("Form_Obstacles").transform;
+        Transform collectibles = new GameObject("Collectibles").transform;
+        Transform cages = new GameObject("Villager_Cages").transform;
+        environment.SetParent(root);
+        obstacles.SetParent(root);
+        collectibles.SetParent(root);
+        cages.SetParent(root);
+
+        MorphoriaPlayer player = CreatePlayer();
+        player.transform.position = new Vector3(-24f, 2.1f, 0f);
+        Camera camera = CreateCamera(player.transform);
+        player.mainCamera = camera;
+        MorphoriaHud hud = CreateHud(player);
+        hud.objective = level.targetVillagers > 0 ? "Liberez les villageois" : "Atteignez le portail";
+        CreatePauseMenu();
+
+        Material primary = GetPrimaryMaterial(level);
+        Material secondary = GetSecondaryMaterial(level);
+        Vector3[] path =
+        {
+            new Vector3(-24f, 1.1f, 0f),
+            new Vector3(-13f, 1.1f, 1.8f),
+            new Vector3(-2f, 2.3f, -1.6f),
+            new Vector3(10f, 1.1f, 0f),
+            new Vector3(22f, 1.1f, 1.4f),
+            new Vector3(34f, 1.1f, 0f)
+        };
+
+        for (int i = 0; i < path.Length; i++)
+        {
+            Material material = i % 2 == 0 ? primary : secondary;
+            CreateIsland("Ile_" + level.sceneName + "_" + i, path[i] - Vector3.up * 1.1f, new Vector3(i == path.Length - 1 ? 10f : 8f, 1f, 7f), material, environment);
+            if (i > 0)
+            {
+                Vector3 midpoint = (path[i - 1] + path[i]) * 0.5f - Vector3.up;
+                float length = Vector3.Distance(path[i - 1], path[i]) - 2f;
+                GameObject bridge = CreateBridge("Pont_" + level.sceneName + "_" + i, midpoint, new Vector3(length, 0.28f, 1.8f), material, environment);
+                Vector3 direction = path[i] - path[i - 1];
+                direction.y = 0f;
+                bridge.transform.rotation = Quaternion.LookRotation(direction, Vector3.up) * Quaternion.Euler(0f, 90f, 0f);
+            }
+        }
+
+        CreateAdventureMechanics(level, obstacles, environment);
+        CreateCheckpoint(path[3], root);
+        CreateStars(path, collectibles);
+        CreateChoiceStarsForPath(level.sceneName, path, collectibles);
+
+        if (level.targetVillagers > 0)
+        {
+            MiniBoss boss = CreateMiniBoss(new Vector3(22f, 1.2f, 1.4f), root);
+            boss.maxHealth = level.worldId == "fortress" ? 6 : 3;
+            hud.miniBoss = boss;
+            CreateAdventureCages(level, boss, cages);
+        }
+
+        LevelExit exit = CreateExitPortal(path[path.Length - 1], root);
+        exit.requiredVillagers = level.targetVillagers;
+        CreateTitleText(level.displayName, new Vector3(-24f, 2.8f, -3.1f), 0.28f, primary.color, root);
+        CreateDecor(root);
+
+        Selection.activeGameObject = player.gameObject;
+        EditorSceneManager.SaveScene(scene, ScenePathFor(level));
+    }
+
+    private static void ConfigureRenderSettings(Color ambient, Color fogColor, float fogDensity)
+    {
+        RenderSettings.ambientLight = ambient;
+        RenderSettings.fog = true;
+        RenderSettings.fogColor = fogColor;
+        RenderSettings.fogDensity = fogDensity;
+    }
+
+    private static void ApplyBuildSettings()
+    {
+        List<EditorBuildSettingsScene> scenes = new List<EditorBuildSettingsScene>
+        {
+            new EditorBuildSettingsScene(MainMenuPath, true),
+            new EditorBuildSettingsScene(HubPath, true),
+            new EditorBuildSettingsScene(WorldMapPath, true),
+            new EditorBuildSettingsScene(ScenePath, true)
+        };
+
+        for (int i = 1; i < MorphoriaGameContent.Levels.Length; i++)
+        {
+            scenes.Add(new EditorBuildSettingsScene(ScenePathFor(MorphoriaGameContent.Levels[i]), true));
+        }
+
+        EditorBuildSettings.scenes = scenes.ToArray();
+    }
+
+    private static string ScenePathFor(MorphoriaLevelInfo level)
+    {
+        return "Assets/Morphoria/Scenes/" + level.sceneName + ".unity";
+    }
+
+    private static Material GetPrimaryMaterial(MorphoriaLevelInfo level)
+    {
+        switch (level.worldId)
+        {
+            case "canyon":
+                return stoneMat;
+            case "gardens":
+                return leafMat;
+            case "archives":
+                return paperMat;
+            case "forge":
+                return scissorsMat;
+            case "fortress":
+                return darkRockMat;
+            default:
+                return neutralMat;
+        }
+    }
+
+    private static Material GetSecondaryMaterial(MorphoriaLevelInfo level)
+    {
+        switch (level.worldId)
+        {
+            case "canyon":
+                return neutralMat;
+            case "gardens":
+                return crystalMat;
+            case "archives":
+                return prismMat;
+            case "forge":
+                return dangerMat;
+            case "fortress":
+                return prismMat;
+            default:
+                return crystalMat;
+        }
+    }
+
+    private static MorphoriaAbility MainAbilityFor(MorphoriaLevelInfo level)
+    {
+        switch (level.worldId)
+        {
+            case "canyon":
+                return MorphoriaAbility.Break;
+            case "gardens":
+                return MorphoriaAbility.Glide;
+            case "archives":
+                return MorphoriaAbility.Fold;
+            case "forge":
+                return MorphoriaAbility.Cut;
+            case "fortress":
+                return MorphoriaAbility.Break;
+            default:
+                return MorphoriaAbility.Any;
+        }
+    }
+
+    private static void CreateAdventureMechanics(MorphoriaLevelInfo level, Transform obstacles, Transform environment)
+    {
+        if (level.worldId == "canyon")
+        {
+            CreateAbilityObstacle("Canyon_Mur_Fracture", new Vector3(-14.7f, 1.45f, 1.8f), new Vector3(1f, 2.8f, 4.7f), stoneMat, MorphoriaAbility.Break, "Passage ouvert", obstacles);
+            GameObject gate = CreateGate("Canyon_Porte_Lourde", new Vector3(8.3f, 1.35f, 0f), new Vector3(0.8f, 2.7f, 4.2f), stoneMat, obstacles);
+            CreateHeavyPlate(new Vector3(3.6f, 1.85f, -2.7f), gate, obstacles);
+        }
+        else if (level.worldId == "gardens")
+        {
+            CreateWindZone(new Vector3(-2f, 2.7f, -1.6f), new Vector3(5f, 4.8f, 4.4f), obstacles);
+            CreateBouncePad(new Vector3(7.6f, 0.75f, -2.2f), obstacles);
+            GameObject fragile = CreateBridge("Jardins_Pont_Fragile", new Vector3(15.8f, 0.15f, 0.7f), new Vector3(5.2f, 0.25f, 1.7f), leafMat, environment);
+            fragile.AddComponent<FragilePlatform>();
+            BoxCollider trigger = fragile.AddComponent<BoxCollider>();
+            trigger.isTrigger = true;
+            trigger.size = new Vector3(1f, 2.2f, 1f);
+        }
+        else if (level.worldId == "archives")
+        {
+            GameObject bridge = CreateBridge("Archives_Pont_Origami_Replie", new Vector3(4.2f, 0.15f, 1.5f), new Vector3(6f, 0.25f, 1.5f), paperMat, environment);
+            bridge.SetActive(false);
+            AbilityGate rune = CreateAbilityObstacle("Archives_Rune_Papyra", new Vector3(-2f, 1.88f, -1.6f), new Vector3(1.25f, 0.18f, 1.25f), prismMat, MorphoriaAbility.Fold, "Pont deploye", obstacles);
+            rune.destroyOnSuccess = false;
+            rune.activateOnSuccess = new[] { bridge };
+            CreateAbilityObstacle("Archives_Fente_Papier", new Vector3(12f, 1.3f, 0f), new Vector3(0.7f, 2.6f, 4.3f), paperMat, MorphoriaAbility.Fold, "Fente traversee", obstacles);
+        }
+        else if (level.worldId == "forge")
+        {
+            GameObject gate = CreateGate("Forge_Grille_Mecanique", new Vector3(9.2f, 1.35f, 0f), new Vector3(0.8f, 2.7f, 4.2f), dangerMat, obstacles);
+            AbilityGate cable = CreateAbilityObstacle("Forge_Cable_Cizo", new Vector3(4.6f, 1.9f, -2.8f), new Vector3(0.28f, 4.8f, 0.28f), scissorsMat, MorphoriaAbility.Cut, "Grille ouverte", obstacles, true);
+            cable.deactivateOnSuccess = new[] { gate };
+            CreateAbilityObstacle("Forge_Filet_Lames", new Vector3(19.2f, 1.35f, 1.4f), new Vector3(0.8f, 2.7f, 4.5f), scissorsMat, MorphoriaAbility.Cut, "Filet coupe", obstacles);
+        }
+        else if (level.worldId == "fortress")
+        {
+            CreateAbilityObstacle("Forteresse_Mur_Rokko", new Vector3(-14.7f, 1.45f, 1.8f), new Vector3(1f, 2.8f, 4.7f), stoneMat, MorphoriaAbility.Break, "Mur brise", obstacles);
+            CreateWindZone(new Vector3(-2f, 2.7f, -1.6f), new Vector3(5f, 4.8f, 4.4f), obstacles);
+            CreateAbilityObstacle("Forteresse_Rune_Papyra", new Vector3(10f, 0.68f, 2.7f), new Vector3(1.25f, 0.18f, 1.25f), prismMat, MorphoriaAbility.Fold, "Rune activee", obstacles);
+            CreateAbilityObstacle("Forteresse_Chaines_Cizo", new Vector3(18.6f, 1.55f, 1.4f), new Vector3(0.36f, 3.4f, 0.36f), scissorsMat, MorphoriaAbility.Cut, "Chaines coupees", obstacles, true);
+        }
+        else
+        {
+            CreateAbilityObstacle("Obstacle_Equipe", new Vector3(-13f, 1.35f, 1.8f), new Vector3(0.8f, 2.7f, 4.2f), neutralMat, MorphoriaAbility.Any, "Passage ouvert", obstacles);
+        }
+    }
+
+    private static void CreateAdventureCages(MorphoriaLevelInfo level, MiniBoss boss, Transform parent)
+    {
+        MorphoriaAbility primary = MainAbilityFor(level);
+        CreateVillagerCage(level.sceneName + "_Cage_A", new Vector3(19.8f, 1.25f, 4.2f), primary, boss, parent);
+        CreateVillagerCage(level.sceneName + "_Cage_B", new Vector3(24.3f, 1.25f, 4.2f), MorphoriaAbility.Cut, boss, parent);
+
+        if (level.targetVillagers > 2)
+        {
+            CreateVillagerCage(level.sceneName + "_Cage_C", new Vector3(19.8f, 1.25f, -3.7f), MorphoriaAbility.Fold, boss, parent);
+            CreateVillagerCage(level.sceneName + "_Cage_D", new Vector3(24.3f, 1.25f, -3.7f), MorphoriaAbility.Break, boss, parent);
+        }
+    }
+
+    private static void CreateChoiceStarsForPath(string prefix, Vector3[] path, Transform parent)
+    {
+        for (int i = 1; i < path.Length - 1; i += 2)
+        {
+            CreateStar("ChoiceStar_" + prefix + "_" + i, path[i] + new Vector3(0f, 0.75f, -2.1f), CollectibleKind.ChoiceStar, prismMat, parent);
+        }
+    }
+
+    private static Camera CreateShellCamera(string name, Vector3 position, Vector3 lookAt, Color background, float fieldOfView)
+    {
+        GameObject cameraObject = new GameObject(name);
+        cameraObject.tag = "MainCamera";
+        Camera camera = cameraObject.AddComponent<Camera>();
+        camera.clearFlags = CameraClearFlags.SolidColor;
+        camera.backgroundColor = background;
+        camera.fieldOfView = fieldOfView;
+        cameraObject.AddComponent<AudioListener>();
+        cameraObject.transform.position = position;
+        cameraObject.transform.LookAt(lookAt);
+        return camera;
+    }
+
+    private static void CreatePauseMenu()
+    {
+        new GameObject("PauseMenu").AddComponent<MorphoriaPauseMenu>();
+    }
+
+    private static void CreateScenePortal(string name, Vector3 position, string label, string targetScene, string targetLevelId, Transform parent)
+    {
+        GameObject trigger = new GameObject(name);
+        trigger.transform.SetParent(parent, false);
+        trigger.transform.position = position;
+        SphereCollider collider = trigger.AddComponent<SphereCollider>();
+        collider.isTrigger = true;
+        collider.radius = 1.35f;
+
+        MorphoriaScenePortal portal = trigger.AddComponent<MorphoriaScenePortal>();
+        portal.label = label;
+        portal.targetScene = targetScene;
+        portal.targetLevelId = targetLevelId;
+
+        CreateCylinder(name + "_Ring", position + Vector3.up * 1.15f, new Vector3(1.2f, 0.06f, 1.2f), crystalMat, parent, Quaternion.Euler(90f, 0f, 0f));
+        Light light = trigger.AddComponent<Light>();
+        light.type = LightType.Point;
+        light.color = new Color(0.22f, 0.72f, 1f);
+        light.range = 6f;
+        light.intensity = 1.8f;
+    }
+
+    private static void CreateVillageHouse(string name, Vector3 position, Material material, Transform parent)
+    {
+        CreateCube(name + "_Base", position, new Vector3(1.5f, 1.5f, 1.5f), material, parent);
+        GameObject roof = CreateCube(name + "_Toit", position + Vector3.up * 0.95f, new Vector3(1.85f, 0.5f, 1.85f), darkRockMat, parent);
+        roof.transform.rotation = Quaternion.Euler(0f, 45f, 0f);
+    }
+
+    private static void CreateFormStatue(string name, Vector3 position, Material material, Transform parent)
+    {
+        CreateCylinder(name + "_Base", position, new Vector3(0.72f, 0.22f, 0.72f), darkRockMat, parent, Quaternion.identity);
+        GameObject body = CreateCube(name + "_Body", position + Vector3.up * 0.8f, new Vector3(0.72f, 1f, 0.72f), material, parent);
+        body.transform.rotation = Quaternion.Euler(0f, 25f, 0f);
+        CreateCube(name + "_Halo", position + Vector3.up * 1.55f, new Vector3(0.92f, 0.08f, 0.92f), crystalMat, parent).transform.rotation = Quaternion.Euler(0f, 45f, 45f);
+    }
+
+    private static void CreateTitleText(string text, Vector3 position, float size, Color color, Transform parent)
+    {
+        GameObject title = new GameObject("Title_" + text.Replace(" ", "_"));
+        title.transform.SetParent(parent, false);
+        title.transform.position = position;
+        title.transform.rotation = Quaternion.Euler(18f, 0f, 0f);
+        TextMesh mesh = title.AddComponent<TextMesh>();
+        mesh.text = text;
+        mesh.anchor = TextAnchor.MiddleCenter;
+        mesh.alignment = TextAlignment.Center;
+        mesh.characterSize = size;
+        mesh.fontSize = 72;
+        mesh.color = Color.Lerp(color, Color.white, 0.25f);
     }
 
     private static void EnsureFolders()
@@ -245,6 +694,7 @@ public static class MorphoriaSceneBuilder
         camera.clearFlags = CameraClearFlags.SolidColor;
         camera.backgroundColor = new Color(0.54f, 0.73f, 0.92f);
         camera.fieldOfView = 58f;
+        cameraObject.AddComponent<AudioListener>();
         ThirdPersonCamera controller = cameraObject.AddComponent<ThirdPersonCamera>();
         controller.target = target;
         cameraObject.transform.position = target.position + new Vector3(0f, 4f, -8f);
@@ -390,7 +840,7 @@ public static class MorphoriaSceneBuilder
         cage.villagerVisual = villager;
     }
 
-    private static void CreateExitPortal(Vector3 position, Transform parent)
+    private static LevelExit CreateExitPortal(Vector3 position, Transform parent)
     {
         GameObject trigger = new GameObject("Portail_Sortie");
         trigger.transform.SetParent(parent, false);
@@ -398,7 +848,7 @@ public static class MorphoriaSceneBuilder
         BoxCollider collider = trigger.AddComponent<BoxCollider>();
         collider.isTrigger = true;
         collider.size = new Vector3(3.2f, 4f, 1.2f);
-        trigger.AddComponent<LevelExit>();
+        LevelExit exit = trigger.AddComponent<LevelExit>();
 
         CreateCylinder("Portail_Sortie_Anneau_A", position + Vector3.up * 1.6f, new Vector3(1.6f, 0.08f, 1.6f), crystalMat, parent, Quaternion.Euler(90f, 0f, 0f));
         CreateCylinder("Portail_Sortie_Anneau_B", position + Vector3.up * 1.6f, new Vector3(2.05f, 0.05f, 2.05f), prismMat, parent, Quaternion.Euler(90f, 0f, 0f));
@@ -407,6 +857,7 @@ public static class MorphoriaSceneBuilder
         light.color = new Color(0.18f, 0.68f, 1f);
         light.range = 9f;
         light.intensity = 3f;
+        return exit;
     }
 
     private static void CreateSectionLabels(Transform parent)

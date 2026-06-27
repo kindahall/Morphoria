@@ -1083,9 +1083,15 @@ namespace Morphoria
     public sealed class LevelExit : MonoBehaviour
     {
         public int requiredVillagers = 4;
+        private bool completing;
 
         private void OnTriggerEnter(Collider other)
         {
+            if (completing)
+            {
+                return;
+            }
+
             MorphoriaPlayer player = other.GetComponentInParent<MorphoriaPlayer>();
             if (player == null)
             {
@@ -1098,8 +1104,11 @@ namespace Morphoria
                 return;
             }
 
+            completing = true;
             player.ShowFeedback("Niveau termine");
-            Time.timeScale = 0.15f;
+            MorphoriaGameSession session = MorphoriaGameSession.GetOrCreate();
+            session.MarkCurrentLevelComplete(player.Inventory.GoldenStars, player.Inventory.ChoiceStars, player.Inventory.VillagersSaved);
+            session.LoadSceneAfterDelay(MorphoriaGameContent.HubScene, 1.35f);
         }
     }
 

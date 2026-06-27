@@ -27,3 +27,6 @@ __pycache__/
 # Secrets
 .env
 *.env
+
+# Unity crash dumps
+UnityProject/mono_crash.mem.*.blob
