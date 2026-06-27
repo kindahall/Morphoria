@@ -141,6 +141,7 @@ public static class MorphoriaProductionValidator
         else if (sceneName == MorphoriaGameContent.HubScene)
         {
             RequireOne<MorphoriaPlayer>(sceneName, issues);
+            RequireOne<MorphoriaProceduralAnimator>(sceneName, issues);
             RequireOne<ThirdPersonCamera>(sceneName, issues);
             RequireOne<MorphoriaHud>(sceneName, issues);
             RequireOne<MorphoriaHubState>(sceneName, issues);
@@ -169,6 +170,7 @@ public static class MorphoriaProductionValidator
         }
 
         RequireOne<MorphoriaPlayer>(sceneName, issues);
+        RequireOne<MorphoriaProceduralAnimator>(sceneName, issues);
         RequireOne<ThirdPersonCamera>(sceneName, issues);
         RequireOne<MorphoriaHud>(sceneName, issues);
         RequireOne<MorphoriaPauseMenu>(sceneName, issues);

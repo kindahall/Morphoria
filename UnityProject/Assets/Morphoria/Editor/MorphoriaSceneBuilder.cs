@@ -732,7 +732,9 @@ public static class MorphoriaSceneBuilder
         controller.center = new Vector3(0f, 1.08f, 0f);
         player.AddComponent<PlayerInventory>();
         player.AddComponent<MorphoriaAvatar>();
-        return player.AddComponent<MorphoriaPlayer>();
+        MorphoriaPlayer morphoriaPlayer = player.AddComponent<MorphoriaPlayer>();
+        player.AddComponent<MorphoriaProceduralAnimator>();
+        return morphoriaPlayer;
     }
 
     private static Camera CreateCamera(Transform target)

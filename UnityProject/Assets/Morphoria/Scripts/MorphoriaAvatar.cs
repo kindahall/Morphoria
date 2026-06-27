@@ -8,6 +8,8 @@ namespace Morphoria
     {
         private Transform visualRoot;
 
+        public Transform VisualRoot => visualRoot;
+
         public void ApplyForm(FormDefinition form)
         {
             if (visualRoot != null)
@@ -44,6 +46,11 @@ namespace Morphoria
             CreatePart("left_fist", PrimitiveType.Sphere, new Vector3(-0.78f, 0.95f, 0.05f), new Vector3(0.46f, 0.46f, 0.46f), body);
             CreatePart("right_fist", PrimitiveType.Sphere, new Vector3(0.78f, 0.95f, 0.05f), new Vector3(0.46f, 0.46f, 0.46f), body);
             CreatePart("scarf", PrimitiveType.Cube, new Vector3(0f, 1.42f, 0.08f), new Vector3(1.1f, 0.12f, 0.12f), RuntimeMaterial(new Color(0.14f, 0.36f, 0.16f), form.accent));
+            CreatePart("left_foot", PrimitiveType.Cube, new Vector3(-0.28f, 0.16f, 0.08f), new Vector3(0.44f, 0.22f, 0.58f), body);
+            CreatePart("right_foot", PrimitiveType.Cube, new Vector3(0.28f, 0.16f, 0.08f), new Vector3(0.44f, 0.22f, 0.58f), body);
+            CreatePart("left_eye", PrimitiveType.Sphere, new Vector3(-0.18f, 1.9f, 0.34f), new Vector3(0.12f, 0.12f, 0.06f), RuntimeMaterial(Color.white, form.accent));
+            CreatePart("right_eye", PrimitiveType.Sphere, new Vector3(0.18f, 1.9f, 0.34f), new Vector3(0.12f, 0.12f, 0.06f), RuntimeMaterial(Color.white, form.accent));
+            CreatePart("amber_crack", PrimitiveType.Cube, new Vector3(0.02f, 0.96f, 0.49f), new Vector3(0.08f, 0.64f, 0.04f), RuntimeMaterial(form.accent, form.accent));
         }
 
         private void BuildLeaf(FormDefinition form)
@@ -54,6 +61,9 @@ namespace Morphoria
             CreatePart("left_wing", PrimitiveType.Cube, new Vector3(-0.68f, 1.18f, -0.05f), new Vector3(0.12f, 0.68f, 1.0f), RuntimeMaterial(form.accent, form.color));
             CreatePart("right_wing", PrimitiveType.Cube, new Vector3(0.68f, 1.18f, -0.05f), new Vector3(0.12f, 0.68f, 1.0f), RuntimeMaterial(form.accent, form.color));
             CreatePart("orange_scarf", PrimitiveType.Cube, new Vector3(0f, 1.36f, 0.08f), new Vector3(0.86f, 0.1f, 0.1f), RuntimeMaterial(new Color(1f, 0.47f, 0.09f), form.accent));
+            CreatePart("leaf_crown", PrimitiveType.Cube, new Vector3(0f, 2.12f, 0f), new Vector3(0.26f, 0.55f, 0.08f), RuntimeMaterial(form.accent, form.color)).transform.localRotation = Quaternion.Euler(0f, 0f, 36f);
+            CreatePart("left_eye", PrimitiveType.Sphere, new Vector3(-0.15f, 1.8f, 0.28f), new Vector3(0.1f, 0.1f, 0.05f), RuntimeMaterial(Color.white, form.accent));
+            CreatePart("right_eye", PrimitiveType.Sphere, new Vector3(0.15f, 1.8f, 0.28f), new Vector3(0.1f, 0.1f, 0.05f), RuntimeMaterial(Color.white, form.accent));
         }
 
         private void BuildPaper(FormDefinition form)
@@ -63,6 +73,10 @@ namespace Morphoria
             CreatePart("paper_head", PrimitiveType.Cube, new Vector3(0f, 1.78f, 0f), new Vector3(0.7f, 0.54f, 0.22f), body);
             CreatePart("fold_left", PrimitiveType.Cube, new Vector3(-0.48f, 1.2f, 0.03f), new Vector3(0.18f, 0.8f, 0.18f), RuntimeMaterial(new Color(0.72f, 0.62f, 1f), form.accent));
             CreatePart("fold_right", PrimitiveType.Cube, new Vector3(0.48f, 1.2f, 0.03f), new Vector3(0.18f, 0.8f, 0.18f), RuntimeMaterial(new Color(0.72f, 0.62f, 1f), form.accent));
+            CreatePart("paper_rune", PrimitiveType.Cube, new Vector3(0f, 1.13f, 0.13f), new Vector3(0.42f, 0.06f, 0.04f), RuntimeMaterial(form.accent, form.accent));
+            CreatePart("paper_hat", PrimitiveType.Cube, new Vector3(0f, 2.12f, 0f), new Vector3(0.76f, 0.2f, 0.2f), RuntimeMaterial(new Color(0.92f, 0.9f, 1f), form.accent)).transform.localRotation = Quaternion.Euler(0f, 0f, 45f);
+            CreatePart("left_eye", PrimitiveType.Sphere, new Vector3(-0.15f, 1.84f, 0.13f), new Vector3(0.09f, 0.09f, 0.04f), RuntimeMaterial(Color.white, form.accent));
+            CreatePart("right_eye", PrimitiveType.Sphere, new Vector3(0.15f, 1.84f, 0.13f), new Vector3(0.09f, 0.09f, 0.04f), RuntimeMaterial(Color.white, form.accent));
         }
 
         private void BuildScissors(FormDefinition form)
@@ -75,6 +89,13 @@ namespace Morphoria
             left.transform.localRotation = Quaternion.Euler(0f, 0f, 18f);
             right.transform.localRotation = Quaternion.Euler(0f, 0f, -18f);
             CreatePart("blue_scarf", PrimitiveType.Cube, new Vector3(0f, 1.35f, 0.08f), new Vector3(0.84f, 0.1f, 0.1f), RuntimeMaterial(new Color(0.05f, 0.2f, 0.42f), form.accent));
+            Material handle = RuntimeMaterial(new Color(0.1f, 0.22f, 0.42f), form.accent);
+            GameObject leftHandle = CreatePart("left_handle", PrimitiveType.Cylinder, new Vector3(-0.28f, 0.36f, 0.12f), new Vector3(0.22f, 0.06f, 0.22f), handle);
+            GameObject rightHandle = CreatePart("right_handle", PrimitiveType.Cylinder, new Vector3(0.28f, 0.36f, 0.12f), new Vector3(0.22f, 0.06f, 0.22f), handle);
+            leftHandle.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            rightHandle.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            CreatePart("left_eye", PrimitiveType.Sphere, new Vector3(-0.14f, 1.8f, 0.28f), new Vector3(0.09f, 0.09f, 0.05f), RuntimeMaterial(Color.white, form.accent));
+            CreatePart("right_eye", PrimitiveType.Sphere, new Vector3(0.14f, 1.8f, 0.28f), new Vector3(0.09f, 0.09f, 0.05f), RuntimeMaterial(Color.white, form.accent));
         }
 
         private GameObject CreatePart(string partName, PrimitiveType primitive, Vector3 position, Vector3 scale, Material material)

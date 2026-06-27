@@ -39,6 +39,9 @@ namespace Morphoria
         public PlayerInventory Inventory => inventory;
         public bool IsWheelOpen => wheelOpen;
         public MorphoriaForm WheelSelection => wheelSelection;
+        public float PlanarSpeed => currentHorizontalVelocity.magnitude;
+        public bool IsGrounded => controller != null && controller.isGrounded;
+        public bool IsGliding { get; private set; }
         public float ForcedFormTimer => Mathf.Max(0f, forcedFormTimer);
         public string FeedbackText => Time.time - lastFeedbackTime < 2.25f ? feedbackText : string.Empty;
 
@@ -154,6 +157,7 @@ namespace Morphoria
             currentHorizontalVelocity = Vector3.MoveTowards(currentHorizontalVelocity, desiredVelocity, form.acceleration * Time.deltaTime);
 
             bool grounded = controller.isGrounded;
+            IsGliding = false;
             if (grounded && verticalVelocity < 0f)
             {
                 verticalVelocity = -2f;
@@ -170,6 +174,7 @@ namespace Morphoria
             {
                 verticalVelocity = Mathf.MoveTowards(verticalVelocity, -3f, 18f * Time.deltaTime);
                 externalVelocity += Vector3.up * (0.7f * Time.deltaTime);
+                IsGliding = true;
             }
 
             if (currentForm == MorphoriaForm.Scissors && running && dashCooldown <= 0f && input.sqrMagnitude > 0.2f)
@@ -217,6 +222,7 @@ namespace Morphoria
             verticalVelocity = 0f;
             currentHorizontalVelocity = Vector3.zero;
             externalVelocity = Vector3.zero;
+            IsGliding = false;
             controller.enabled = true;
             inventory.Damage(1);
             ShowFeedback("Retour au checkpoint");
