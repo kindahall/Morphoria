@@ -208,10 +208,10 @@ public static class MorphoriaSceneBuilder
         CreateCylinder("Menu_Portal_Ring", new Vector3(0f, 1.8f, 0.2f), new Vector3(2.6f, 0.08f, 2.6f), crystalMat, root, Quaternion.Euler(90f, 0f, 0f));
         CreateTitleText("Morphoria", new Vector3(0f, 3.5f, 0.4f), 0.78f, crystalMat.color, root);
 
-        CreateFormStatue("Menu_Rokko", new Vector3(-4.1f, 0.45f, -0.2f), stoneMat, root);
-        CreateFormStatue("Menu_Luma", new Vector3(-1.35f, 0.45f, 1.9f), leafMat, root);
-        CreateFormStatue("Menu_Papyra", new Vector3(1.35f, 0.45f, 1.9f), paperMat, root);
-        CreateFormStatue("Menu_Cizo", new Vector3(4.1f, 0.45f, -0.2f), scissorsMat, root);
+        CreateFormStatue("Menu_Rokko", new Vector3(-4.1f, 0.45f, -0.2f), stoneMat, "PF_Rokko", root);
+        CreateFormStatue("Menu_Luma", new Vector3(-1.35f, 0.45f, 1.9f), leafMat, "PF_Luma", root);
+        CreateFormStatue("Menu_Papyra", new Vector3(1.35f, 0.45f, 1.9f), paperMat, "PF_Papyra", root);
+        CreateFormStatue("Menu_Cizo", new Vector3(4.1f, 0.45f, -0.2f), scissorsMat, "PF_Cizo", root);
 
         GameObject controller = new GameObject("MainMenu_Controller");
         controller.AddComponent<MorphoriaMenuScreen>();
@@ -776,11 +776,24 @@ public static class MorphoriaSceneBuilder
         roof.transform.rotation = Quaternion.Euler(0f, 45f, 0f);
     }
 
-    private static void CreateFormStatue(string name, Vector3 position, Material material, Transform parent)
+    private static void CreateFormStatue(string name, Vector3 position, Material material, string prefabName, Transform parent)
     {
         CreateCylinder(name + "_Base", position, new Vector3(0.72f, 0.22f, 0.72f), darkRockMat, parent, Quaternion.identity);
-        GameObject body = CreateCube(name + "_Body", position + Vector3.up * 0.8f, new Vector3(0.72f, 1f, 0.72f), material, parent);
-        body.transform.rotation = Quaternion.Euler(0f, 25f, 0f);
+        GameObject visual = InstantiateCharacterPrefab(prefabName, parent);
+        if (visual != null)
+        {
+            visual.name = name + "_Character";
+            visual.transform.localPosition = position + Vector3.up * 0.16f;
+            visual.transform.localRotation = Quaternion.Euler(0f, 25f, 0f);
+            visual.transform.localScale = new Vector3(0.72f, 0.72f, 0.72f);
+            DestroyCollidersImmediate(visual);
+        }
+        else
+        {
+            GameObject body = CreateCube(name + "_Body", position + Vector3.up * 0.8f, new Vector3(0.72f, 1f, 0.72f), material, parent);
+            body.transform.rotation = Quaternion.Euler(0f, 25f, 0f);
+        }
+
         CreateCube(name + "_Halo", position + Vector3.up * 1.55f, new Vector3(0.92f, 0.08f, 0.92f), crystalMat, parent).transform.rotation = Quaternion.Euler(0f, 45f, 45f);
     }
 

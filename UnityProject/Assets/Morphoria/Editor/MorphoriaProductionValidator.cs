@@ -134,6 +134,7 @@ public static class MorphoriaProductionValidator
         if (sceneName == MorphoriaGameContent.MainMenuScene)
         {
             RequireOne<MorphoriaMenuScreen>(sceneName, issues);
+            ValidateMainMenuCharacters(sceneName, issues);
         }
         else if (sceneName == MorphoriaGameContent.WorldMapScene)
         {
@@ -161,6 +162,35 @@ public static class MorphoriaProductionValidator
 
         ValidatePlayerAvatarPrefabs(sceneName, issues);
         ValidateScenePortals(sceneName, issues);
+    }
+
+    private static void ValidateMainMenuCharacters(string sceneName, List<string> issues)
+    {
+        string[,] expected =
+        {
+            { "Menu_Rokko_Character", "Assets/Morphoria/Prefabs/Characters/PF_Rokko.prefab" },
+            { "Menu_Luma_Character", "Assets/Morphoria/Prefabs/Characters/PF_Luma.prefab" },
+            { "Menu_Papyra_Character", "Assets/Morphoria/Prefabs/Characters/PF_Papyra.prefab" },
+            { "Menu_Cizo_Character", "Assets/Morphoria/Prefabs/Characters/PF_Cizo.prefab" }
+        };
+
+        for (int i = 0; i < expected.GetLength(0); i++)
+        {
+            string objectName = expected[i, 0];
+            string prefabPath = expected[i, 1];
+            GameObject visual = GameObject.Find(objectName);
+            if (visual == null)
+            {
+                issues.Add(sceneName + ": missing menu character " + objectName + ".");
+                continue;
+            }
+
+            string actualPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(visual);
+            if (actualPath != prefabPath)
+            {
+                issues.Add(sceneName + ": menu character " + objectName + " is not linked to " + prefabPath + ".");
+            }
+        }
     }
 
     private static void ValidatePlayableLevel(string sceneName, List<string> issues)
