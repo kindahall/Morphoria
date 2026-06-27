@@ -1339,6 +1339,7 @@ public static class MorphoriaSceneBuilder
         villager.SetActive(false);
 
         VillagerCage cage = root.AddComponent<VillagerCage>();
+        cage.persistentId = name;
         cage.requiredAbility = ability;
         cage.boss = boss;
         cage.cageVisual = cageVisual;
@@ -1448,6 +1449,7 @@ public static class MorphoriaSceneBuilder
         collider.radius = 0.55f;
 
         MorphoriaCollectible collectible = star.AddComponent<MorphoriaCollectible>();
+        collectible.persistentId = name;
         collectible.kind = kind;
 
         GameObject diamondA = CreateCube(name + "_Facet_A", Vector3.zero, new Vector3(0.24f, 0.74f, 0.24f), material, star.transform);

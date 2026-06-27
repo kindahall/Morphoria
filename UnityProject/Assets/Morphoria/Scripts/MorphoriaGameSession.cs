@@ -167,6 +167,68 @@ namespace Morphoria
             return MorphoriaSaveSystem.GetProgress(SaveData, levelId);
         }
 
+        public bool TryGetActiveLevel(out MorphoriaLevelInfo level)
+        {
+            Scene scene = SceneManager.GetActiveScene();
+            level = MorphoriaGameContent.GetLevelByScene(scene.name);
+            if (level == null && SaveData != null && !string.IsNullOrEmpty(SaveData.currentLevelId))
+            {
+                MorphoriaLevelInfo savedLevel = MorphoriaGameContent.GetLevel(SaveData.currentLevelId);
+                if (savedLevel != null && savedLevel.sceneName == scene.name)
+                {
+                    level = savedLevel;
+                }
+            }
+
+            return level != null;
+        }
+
+        public bool HasCollectedInActiveLevel(string objectId, CollectibleKind kind)
+        {
+            if (SaveData == null || !TryGetActiveLevel(out MorphoriaLevelInfo level))
+            {
+                return false;
+            }
+
+            return MorphoriaSaveSystem.HasCollected(SaveData, level.id, objectId, kind);
+        }
+
+        public void RecordCollectedInActiveLevel(string objectId, CollectibleKind kind)
+        {
+            if (SaveData == null || !TryGetActiveLevel(out MorphoriaLevelInfo level))
+            {
+                return;
+            }
+
+            if (MorphoriaSaveSystem.RecordCollected(SaveData, level.id, objectId, kind))
+            {
+                Save();
+            }
+        }
+
+        public bool HasRescuedVillagerInActiveLevel(string villagerId)
+        {
+            if (SaveData == null || !TryGetActiveLevel(out MorphoriaLevelInfo level))
+            {
+                return false;
+            }
+
+            return MorphoriaSaveSystem.HasRescuedVillager(SaveData, level.id, villagerId);
+        }
+
+        public void RecordRescuedVillagerInActiveLevel(string villagerId)
+        {
+            if (SaveData == null || !TryGetActiveLevel(out MorphoriaLevelInfo level))
+            {
+                return;
+            }
+
+            if (MorphoriaSaveSystem.RecordRescuedVillager(SaveData, level.id, villagerId))
+            {
+                Save();
+            }
+        }
+
         private IEnumerator DelayedLoadSceneRoutine(string sceneName, float delaySeconds)
         {
             float end = Time.unscaledTime + Mathf.Max(0f, delaySeconds);

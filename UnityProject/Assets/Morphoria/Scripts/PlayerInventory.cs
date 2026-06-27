@@ -29,6 +29,23 @@ namespace Morphoria
 
         public void AddCollectible(CollectibleKind kind, int amount)
         {
+            ApplyCollectible(kind, amount);
+            Changed?.Invoke();
+        }
+
+        public void SeedCollected(CollectibleKind kind, int amount)
+        {
+            ApplyCollectible(kind, amount);
+            Changed?.Invoke();
+        }
+
+        private void ApplyCollectible(CollectibleKind kind, int amount)
+        {
+            if (amount <= 0)
+            {
+                return;
+            }
+
             switch (kind)
             {
                 case CollectibleKind.GoldenStar:
@@ -42,8 +59,6 @@ namespace Morphoria
                     PrismStars += amount;
                     break;
             }
-
-            Changed?.Invoke();
         }
 
         public bool SpendChoiceStar()
@@ -60,9 +75,20 @@ namespace Morphoria
 
         public void SaveVillager()
         {
+            ApplyVillagerReward();
+            Changed?.Invoke();
+        }
+
+        public void SeedVillagerSaved()
+        {
+            ApplyVillagerReward();
+            Changed?.Invoke();
+        }
+
+        private void ApplyVillagerReward()
+        {
             VillagersSaved++;
             ChoiceStars++;
-            Changed?.Invoke();
         }
 
         public bool Damage(int amount)

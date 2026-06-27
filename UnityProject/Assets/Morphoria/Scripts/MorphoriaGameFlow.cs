@@ -119,6 +119,9 @@ namespace Morphoria
         public int bestPrismStars;
         public int bestVillagers;
         public int clears;
+        public List<string> collectedGoldenIds = new List<string>();
+        public List<string> collectedPrismIds = new List<string>();
+        public List<string> rescuedVillagerIds = new List<string>();
     }
 
     [Serializable]
@@ -144,7 +147,7 @@ namespace Morphoria
     [Serializable]
     public sealed class MorphoriaSaveData
     {
-        public int version = 1;
+        public int version = 2;
         public string currentLevelId = MorphoriaGameContent.Levels[0].id;
         public string lastScene = MorphoriaGameContent.HubScene;
         public int totalGoldenStars;
@@ -318,7 +321,65 @@ namespace Morphoria
 
             MorphoriaLevelProgress progress = new MorphoriaLevelProgress { levelId = levelId };
             data.levels.Add(progress);
+            NormalizeLevelProgress(progress);
             return progress;
+        }
+
+        public static bool HasCollected(MorphoriaSaveData data, string levelId, string objectId, CollectibleKind kind)
+        {
+            if (string.IsNullOrEmpty(objectId))
+            {
+                return false;
+            }
+
+            MorphoriaLevelProgress progress = GetProgress(data, levelId);
+            return CollectionFor(progress, kind).Contains(objectId);
+        }
+
+        public static bool RecordCollected(MorphoriaSaveData data, string levelId, string objectId, CollectibleKind kind)
+        {
+            if (string.IsNullOrEmpty(objectId))
+            {
+                return false;
+            }
+
+            MorphoriaLevelProgress progress = GetProgress(data, levelId);
+            List<string> ids = CollectionFor(progress, kind);
+            if (ids.Contains(objectId))
+            {
+                return false;
+            }
+
+            ids.Add(objectId);
+            return true;
+        }
+
+        public static bool HasRescuedVillager(MorphoriaSaveData data, string levelId, string villagerId)
+        {
+            if (string.IsNullOrEmpty(villagerId))
+            {
+                return false;
+            }
+
+            MorphoriaLevelProgress progress = GetProgress(data, levelId);
+            return progress.rescuedVillagerIds.Contains(villagerId);
+        }
+
+        public static bool RecordRescuedVillager(MorphoriaSaveData data, string levelId, string villagerId)
+        {
+            if (string.IsNullOrEmpty(villagerId))
+            {
+                return false;
+            }
+
+            MorphoriaLevelProgress progress = GetProgress(data, levelId);
+            if (progress.rescuedVillagerIds.Contains(villagerId))
+            {
+                return false;
+            }
+
+            progress.rescuedVillagerIds.Add(villagerId);
+            return true;
         }
 
         public static void Normalize(MorphoriaSaveData data)
@@ -327,6 +388,8 @@ namespace Morphoria
             {
                 data.levels = new List<MorphoriaLevelProgress>();
             }
+
+            data.version = Mathf.Max(2, data.version);
 
             for (int i = 0; i < MorphoriaGameContent.Levels.Length; i++)
             {
@@ -349,6 +412,11 @@ namespace Morphoria
                         unlocked = i == 0
                     });
                 }
+            }
+
+            for (int i = 0; i < data.levels.Count; i++)
+            {
+                NormalizeLevelProgress(data.levels[i]);
             }
 
             MorphoriaLevelProgress first = GetProgressWithoutNormalize(data, MorphoriaGameContent.Levels[0].id);
@@ -388,6 +456,60 @@ namespace Morphoria
             }
 
             return null;
+        }
+
+        private static List<string> CollectionFor(MorphoriaLevelProgress progress, CollectibleKind kind)
+        {
+            NormalizeLevelProgress(progress);
+            if (kind == CollectibleKind.GoldenStar)
+            {
+                return progress.collectedGoldenIds;
+            }
+
+            return progress.collectedPrismIds;
+        }
+
+        private static void NormalizeLevelProgress(MorphoriaLevelProgress progress)
+        {
+            if (progress == null)
+            {
+                return;
+            }
+
+            if (progress.collectedGoldenIds == null)
+            {
+                progress.collectedGoldenIds = new List<string>();
+            }
+
+            if (progress.collectedPrismIds == null)
+            {
+                progress.collectedPrismIds = new List<string>();
+            }
+
+            if (progress.rescuedVillagerIds == null)
+            {
+                progress.rescuedVillagerIds = new List<string>();
+            }
+
+            Deduplicate(progress.collectedGoldenIds);
+            Deduplicate(progress.collectedPrismIds);
+            Deduplicate(progress.rescuedVillagerIds);
+        }
+
+        private static void Deduplicate(List<string> ids)
+        {
+            HashSet<string> seen = new HashSet<string>();
+            for (int i = ids.Count - 1; i >= 0; i--)
+            {
+                string id = ids[i];
+                if (string.IsNullOrEmpty(id) || seen.Contains(id))
+                {
+                    ids.RemoveAt(i);
+                    continue;
+                }
+
+                seen.Add(id);
+            }
         }
 
         private static void RecalculateTotals(MorphoriaSaveData data)

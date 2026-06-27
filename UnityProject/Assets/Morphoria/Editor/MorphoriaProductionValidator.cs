@@ -104,6 +104,29 @@ public static class MorphoriaProductionValidator
         }
 
         MorphoriaLevelInfo firstLevel = MorphoriaGameContent.Levels[0];
+        string goldenId = firstLevel.id + "_golden_validation";
+        string prismId = firstLevel.id + "_prism_validation";
+        string villagerId = firstLevel.id + "_villager_validation";
+        if (!MorphoriaSaveSystem.RecordCollected(data, firstLevel.id, goldenId, CollectibleKind.GoldenStar) || !MorphoriaSaveSystem.HasCollected(data, firstLevel.id, goldenId, CollectibleKind.GoldenStar))
+        {
+            issues.Add("Campaign save should persist collected golden object ids.");
+        }
+
+        if (!MorphoriaSaveSystem.RecordCollected(data, firstLevel.id, prismId, CollectibleKind.ChoiceStar) || !MorphoriaSaveSystem.HasCollected(data, firstLevel.id, prismId, CollectibleKind.ChoiceStar))
+        {
+            issues.Add("Campaign save should persist collected prism object ids.");
+        }
+
+        if (!MorphoriaSaveSystem.RecordRescuedVillager(data, firstLevel.id, villagerId) || !MorphoriaSaveSystem.HasRescuedVillager(data, firstLevel.id, villagerId))
+        {
+            issues.Add("Campaign save should persist rescued villager ids.");
+        }
+
+        if (MorphoriaSaveSystem.RecordCollected(data, firstLevel.id, goldenId, CollectibleKind.GoldenStar) || MorphoriaSaveSystem.RecordRescuedVillager(data, firstLevel.id, villagerId))
+        {
+            issues.Add("Campaign save should ignore duplicate persistent object ids.");
+        }
+
         MorphoriaLevelClearResult replay = MorphoriaCampaignProgression.MarkLevelComplete(data, firstLevel.id, 1, 0, 0);
         MorphoriaLevelProgress firstProgress = MorphoriaSaveSystem.GetProgress(data, firstLevel.id);
         if (replay.firstClear || replay.newBest || firstProgress.clears != 2 || firstProgress.bestGoldenStars != firstLevel.targetGoldenStars)
@@ -406,8 +429,18 @@ public static class MorphoriaProductionValidator
 
         int goldenStars = 0;
         int prismStars = 0;
+        HashSet<string> collectibleIds = new HashSet<string>();
         for (int i = 0; i < collectibles.Length; i++)
         {
+            if (string.IsNullOrEmpty(collectibles[i].persistentId))
+            {
+                issues.Add(sceneName + ": collectible " + collectibles[i].name + " needs a persistent id.");
+            }
+            else if (!collectibleIds.Add(collectibles[i].persistentId))
+            {
+                issues.Add(sceneName + ": duplicate collectible persistent id " + collectibles[i].persistentId + ".");
+            }
+
             if (collectibles[i].kind == CollectibleKind.GoldenStar)
             {
                 goldenStars += Mathf.Max(0, collectibles[i].amount);
@@ -431,6 +464,19 @@ public static class MorphoriaProductionValidator
         if (cages.Length != level.targetVillagers)
         {
             issues.Add(sceneName + ": expected " + level.targetVillagers + " villager cage(s), found " + cages.Length + ".");
+        }
+
+        HashSet<string> cageIds = new HashSet<string>();
+        for (int i = 0; i < cages.Length; i++)
+        {
+            if (string.IsNullOrEmpty(cages[i].persistentId))
+            {
+                issues.Add(sceneName + ": villager cage " + cages[i].name + " needs a persistent id.");
+            }
+            else if (!cageIds.Add(cages[i].persistentId))
+            {
+                issues.Add(sceneName + ": duplicate villager cage persistent id " + cages[i].persistentId + ".");
+            }
         }
 
         if (huds.Length == 1)

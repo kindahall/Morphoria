@@ -6,6 +6,7 @@ namespace Morphoria
 {
     public sealed class VillagerCage : MonoBehaviour, IFormInteractable
     {
+        public string persistentId;
         public MorphoriaAbility requiredAbility = MorphoriaAbility.Any;
         public bool requiresBossDefeated = true;
         public MiniBoss boss;
@@ -14,6 +15,30 @@ namespace Morphoria
         private bool opened;
 
         public bool IsOpened => opened;
+
+        private void Awake()
+        {
+            if (string.IsNullOrEmpty(persistentId))
+            {
+                persistentId = gameObject.name;
+            }
+        }
+
+        private void Start()
+        {
+            MorphoriaGameSession session = MorphoriaGameSession.GetOrCreate();
+            if (!session.HasRescuedVillagerInActiveLevel(persistentId))
+            {
+                return;
+            }
+
+            ApplyOpenedVisuals();
+            MorphoriaPlayer player = FindAnyObjectByType<MorphoriaPlayer>();
+            if (player != null)
+            {
+                player.Inventory.SeedVillagerSaved();
+            }
+        }
 
         public bool CanInteract(FormDefinition form)
         {
@@ -49,6 +74,16 @@ namespace Morphoria
             }
 
             opened = true;
+            ApplyOpenedVisuals();
+            player.Inventory.SaveVillager();
+            MorphoriaGameSession.GetOrCreate().RecordRescuedVillagerInActiveLevel(persistentId);
+            player.ShowFeedback("Villageois libere");
+            MorphoriaFeedbackSystem.GetOrCreate().Play(MorphoriaFeedbackCue.VillagerSaved, transform.position + Vector3.up, Color.cyan, 0.95f);
+        }
+
+        private void ApplyOpenedVisuals()
+        {
+            opened = true;
             if (cageVisual != null)
             {
                 cageVisual.SetActive(false);
@@ -58,10 +93,6 @@ namespace Morphoria
             {
                 villagerVisual.SetActive(true);
             }
-
-            player.Inventory.SaveVillager();
-            player.ShowFeedback("Villageois libere");
-            MorphoriaFeedbackSystem.GetOrCreate().Play(MorphoriaFeedbackCue.VillagerSaved, transform.position + Vector3.up, Color.cyan, 0.95f);
         }
     }
 }
