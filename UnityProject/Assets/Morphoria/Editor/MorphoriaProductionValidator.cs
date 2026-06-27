@@ -478,6 +478,7 @@ public static class MorphoriaProductionValidator
         RequireAtLeast<MorphoriaCollectible>(sceneName, 8, issues);
         ValidatePlayerControllerFeel(sceneName, issues);
         ValidatePlayerInventory(sceneName, issues);
+        ValidateRouteLanguage(sceneName, issues);
         if (level.targetVillagers > 0)
         {
             RequireOne<MiniBoss>(sceneName, issues);
@@ -646,6 +647,54 @@ public static class MorphoriaProductionValidator
         if (player.landingCameraImpulse <= 0f)
         {
             issues.Add(sceneName + ": player should send a subtle camera impulse on hard landings.");
+        }
+    }
+
+    private static void ValidateRouteLanguage(string sceneName, List<string> issues)
+    {
+        Transform[] transforms = UnityEngine.Object.FindObjectsByType<Transform>(FindObjectsInactive.Include);
+        int routeGroups = 0;
+        int totemBases = 0;
+        int totemLights = 0;
+        int routeRails = 0;
+
+        for (int i = 0; i < transforms.Length; i++)
+        {
+            string name = transforms[i].name;
+            if (name.EndsWith("_Route_Language", StringComparison.Ordinal))
+            {
+                routeGroups++;
+            }
+
+            if (name.Contains("_Totem_") && name.EndsWith("_Base", StringComparison.Ordinal))
+            {
+                totemBases++;
+            }
+
+            if (name.Contains("_Totem_") && name.EndsWith("_Light", StringComparison.Ordinal))
+            {
+                totemLights++;
+            }
+
+            if (name.Contains("_Rail_") && (name.EndsWith("_Left", StringComparison.Ordinal) || name.EndsWith("_Right", StringComparison.Ordinal)))
+            {
+                routeRails++;
+            }
+        }
+
+        if (routeGroups < 1)
+        {
+            issues.Add(sceneName + ": playable level needs a Route_Language group for readable path landmarks.");
+        }
+
+        if (totemBases < 6 || totemLights < 6)
+        {
+            issues.Add(sceneName + ": playable level needs at least six route totems with lights.");
+        }
+
+        if (routeRails < 10)
+        {
+            issues.Add(sceneName + ": playable level needs at least ten route rail strips.");
         }
     }
 

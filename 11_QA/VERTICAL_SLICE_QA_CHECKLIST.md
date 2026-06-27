@@ -85,6 +85,7 @@
 ## Visual Fidelity
 
 - Level reads as floating-island adventure.
+- Main route has visible rails, crystals, and form totems without feeling like graybox-only geometry.
 - Each form section keeps its reference-card color.
 - HUD uses dark panels with colored accents.
 - Cages and prism objects use blue/violet crystal language.

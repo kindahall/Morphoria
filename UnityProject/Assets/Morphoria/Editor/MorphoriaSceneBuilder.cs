@@ -112,6 +112,7 @@ public static class MorphoriaSceneBuilder
         CreateBridge("Pont_Ciseaux_Puzzle", new Vector3(24f, 0.1f, -1.5f), new Vector3(7f, 0.3f, 2f), scissorsMat, environment);
         CreateBridge("Pont_Puzzle_Arene", new Vector3(38f, 0.1f, 0f), new Vector3(7f, 0.3f, 2.4f), neutralMat, environment);
         CreateBridge("Pont_Arene_Sortie", new Vector3(51.5f, 0.1f, 1f), new Vector3(6f, 0.3f, 2.2f), crystalMat, environment);
+        CreateRouteLanguage("Route_Pont_Quatre_Formes", path, null, root);
 
         GameObject fragileBridge = CreateBridge("Pont_Fragile_Evite_Rokko", new Vector3(-17.4f, 1.15f, 2.2f), new Vector3(5.8f, 0.26f, 2.1f), leafMat, environment);
         fragileBridge.AddComponent<FragilePlatform>();
@@ -488,6 +489,7 @@ public static class MorphoriaSceneBuilder
             }
         }
 
+        CreateRouteLanguage("Route_" + level.sceneName, path, level, root);
         CreateAdventureMechanics(level, obstacles, environment);
         CreateAdventureEnemies(level, path, enemies);
         CreateCheckpoint(path[3], root);
@@ -709,6 +711,148 @@ public static class MorphoriaSceneBuilder
             CreateEnemy("Ecloria_Picboule", "Picboule", path[1] + new Vector3(0f, 0.35f, -2.2f), MorphoriaAbility.Break, stoneMat, parent, Vector3.forward);
             CreateEnemy("Ecloria_Roncivore", "Roncivore", path[3] + new Vector3(0f, 0.35f, 2.2f), MorphoriaAbility.Cut, scissorsMat, parent, Vector3.right);
         }
+    }
+
+    private static void CreateRouteLanguage(string name, Vector3[] path, MorphoriaLevelInfo level, Transform parent)
+    {
+        GameObject root = new GameObject(name + "_Route_Language");
+        root.transform.SetParent(parent, false);
+
+        for (int i = 0; i < path.Length; i++)
+        {
+            MorphoriaAbility ability = RouteAbilityFor(level, i);
+            CreateRouteTotem(name + "_Totem_" + i.ToString("00"), path[i], ability, root.transform);
+        }
+
+        for (int i = 1; i < path.Length; i++)
+        {
+            MorphoriaAbility ability = RouteAbilityFor(level, i);
+            CreateRouteRails(name + "_Rail_" + i.ToString("00"), path[i - 1], path[i], ability, root.transform);
+        }
+    }
+
+    private static MorphoriaAbility RouteAbilityFor(MorphoriaLevelInfo level, int index)
+    {
+        if (level == null)
+        {
+            MorphoriaAbility[] verticalSlice =
+            {
+                MorphoriaAbility.Any,
+                MorphoriaAbility.Break,
+                MorphoriaAbility.Glide,
+                MorphoriaAbility.Fold,
+                MorphoriaAbility.Cut,
+                MorphoriaAbility.PushHeavy,
+                MorphoriaAbility.Any,
+                MorphoriaAbility.Any
+            };
+            return verticalSlice[Mathf.Clamp(index, 0, verticalSlice.Length - 1)];
+        }
+
+        if (level.worldId == "canyon")
+        {
+            MorphoriaAbility[] canyon = { MorphoriaAbility.Any, MorphoriaAbility.Break, MorphoriaAbility.Break, MorphoriaAbility.PushHeavy, MorphoriaAbility.Break, MorphoriaAbility.Any };
+            return canyon[Mathf.Clamp(index, 0, canyon.Length - 1)];
+        }
+
+        if (level.worldId == "gardens")
+        {
+            MorphoriaAbility[] gardens = { MorphoriaAbility.Any, MorphoriaAbility.Glide, MorphoriaAbility.Glide, MorphoriaAbility.Cut, MorphoriaAbility.Glide, MorphoriaAbility.Any };
+            return gardens[Mathf.Clamp(index, 0, gardens.Length - 1)];
+        }
+
+        if (level.worldId == "archives")
+        {
+            MorphoriaAbility[] archives = { MorphoriaAbility.Any, MorphoriaAbility.Fold, MorphoriaAbility.Fold, MorphoriaAbility.Cut, MorphoriaAbility.Fold, MorphoriaAbility.Any };
+            return archives[Mathf.Clamp(index, 0, archives.Length - 1)];
+        }
+
+        if (level.worldId == "forge")
+        {
+            MorphoriaAbility[] forge = { MorphoriaAbility.Any, MorphoriaAbility.Cut, MorphoriaAbility.Cut, MorphoriaAbility.Break, MorphoriaAbility.Fold, MorphoriaAbility.Cut };
+            return forge[Mathf.Clamp(index, 0, forge.Length - 1)];
+        }
+
+        if (level.worldId == "fortress")
+        {
+            MorphoriaAbility[] fortress = { MorphoriaAbility.Break, MorphoriaAbility.Glide, MorphoriaAbility.Fold, MorphoriaAbility.Cut, MorphoriaAbility.Break, MorphoriaAbility.Cut };
+            return fortress[Mathf.Clamp(index, 0, fortress.Length - 1)];
+        }
+
+        return index <= 0 ? MorphoriaAbility.Any : MainAbilityFor(level);
+    }
+
+    private static void CreateRouteRails(string name, Vector3 from, Vector3 to, MorphoriaAbility ability, Transform parent)
+    {
+        Vector3 direction = to - from;
+        direction.y = 0f;
+        float length = direction.magnitude;
+        if (length <= 0.01f)
+        {
+            return;
+        }
+
+        Vector3 right = Vector3.Cross(Vector3.up, direction.normalized);
+        Vector3 midpoint = (from + to) * 0.5f + Vector3.up * 0.15f;
+        Material material = WeaknessMaterial(ability);
+
+        for (int side = -1; side <= 1; side += 2)
+        {
+            GameObject rail = CreateDecorCube(name + (side < 0 ? "_Left" : "_Right"), midpoint + right * side * 0.95f, new Vector3(0.12f, 0.08f, length), material, parent);
+            rail.transform.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
+        }
+
+        int pips = Mathf.Clamp(Mathf.RoundToInt(length / 4f), 1, 4);
+        for (int i = 0; i < pips; i++)
+        {
+            float t = (i + 1f) / (pips + 1f);
+            Vector3 position = Vector3.Lerp(from, to, t) + Vector3.up * 0.22f;
+            GameObject crystal = CreateDecorCube(name + "_Crystal_" + i, position, new Vector3(0.22f, 0.22f, 0.22f), material, parent);
+            crystal.transform.rotation = Quaternion.Euler(0f, 45f, 45f);
+        }
+    }
+
+    private static void CreateRouteTotem(string name, Vector3 position, MorphoriaAbility ability, Transform parent)
+    {
+        Material material = WeaknessMaterial(ability);
+        Vector3 basePosition = position + new Vector3(0f, -0.38f, -2.75f);
+        CreateDecorCylinder(name + "_Base", basePosition, new Vector3(0.44f, 0.14f, 0.44f), darkRockMat, parent, Quaternion.identity);
+
+        GameObject marker = CreateDecorCube(name + "_Marker", basePosition + Vector3.up * 0.42f, new Vector3(0.42f, 0.42f, 0.42f), material, parent);
+        marker.transform.rotation = Quaternion.Euler(0f, 45f, 45f);
+
+        if (ability == MorphoriaAbility.Glide)
+        {
+            CreateDecorCube(name + "_Wing_A", basePosition + new Vector3(-0.42f, 0.5f, 0f), new Vector3(0.12f, 0.56f, 0.34f), leafMat, parent).transform.rotation = Quaternion.Euler(0f, -18f, 0f);
+            CreateDecorCube(name + "_Wing_B", basePosition + new Vector3(0.42f, 0.5f, 0f), new Vector3(0.12f, 0.56f, 0.34f), leafMat, parent).transform.rotation = Quaternion.Euler(0f, 18f, 0f);
+        }
+        else if (ability == MorphoriaAbility.Fold)
+        {
+            CreateDecorCube(name + "_Fold_A", basePosition + new Vector3(-0.28f, 0.5f, 0f), new Vector3(0.34f, 0.04f, 0.52f), paperMat, parent).transform.rotation = Quaternion.Euler(0f, 0f, 28f);
+            CreateDecorCube(name + "_Fold_B", basePosition + new Vector3(0.28f, 0.5f, 0f), new Vector3(0.34f, 0.04f, 0.52f), paperMat, parent).transform.rotation = Quaternion.Euler(0f, 0f, -28f);
+        }
+        else if (ability == MorphoriaAbility.Cut)
+        {
+            CreateDecorCube(name + "_Blade_A", basePosition + new Vector3(-0.18f, 0.52f, 0f), new Vector3(0.08f, 0.72f, 0.12f), scissorsMat, parent).transform.rotation = Quaternion.Euler(0f, 0f, -26f);
+            CreateDecorCube(name + "_Blade_B", basePosition + new Vector3(0.18f, 0.52f, 0f), new Vector3(0.08f, 0.72f, 0.12f), scissorsMat, parent).transform.rotation = Quaternion.Euler(0f, 0f, 26f);
+        }
+        else if (ability == MorphoriaAbility.Break || ability == MorphoriaAbility.PushHeavy || ability == MorphoriaAbility.ResistWind)
+        {
+            CreateDecorCube(name + "_Stone_Block", basePosition + Vector3.up * 0.55f, new Vector3(0.62f, 0.4f, 0.52f), stoneMat, parent).transform.rotation = Quaternion.Euler(0f, 22f, 8f);
+        }
+        else
+        {
+            GameObject prism = CreateDecorCube(name + "_Prism", basePosition + Vector3.up * 0.58f, new Vector3(0.34f, 0.58f, 0.34f), prismMat, parent);
+            prism.transform.rotation = Quaternion.Euler(0f, 45f, 45f);
+        }
+
+        Light light = new GameObject(name + "_Light").AddComponent<Light>();
+        light.transform.SetParent(parent, false);
+        light.transform.position = basePosition + Vector3.up * 0.75f;
+        light.type = LightType.Point;
+        light.color = material.color;
+        light.range = 3.2f;
+        light.intensity = 0.72f;
     }
 
     private static MorphoriaEnemy CreateEnemy(string objectName, string displayName, Vector3 position, MorphoriaAbility weakness, Material themeMaterial, Transform parent, Vector3 patrolAxis, float speed = 1.55f, float patrolDistance = 1.7f, float hover = 0.08f)
