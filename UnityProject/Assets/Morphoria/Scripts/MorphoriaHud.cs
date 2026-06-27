@@ -18,6 +18,7 @@ namespace Morphoria
         private GUIStyle titleStyle;
         private GUIStyle labelStyle;
         private GUIStyle smallStyle;
+        private GUIStyle promptStyle;
 
         private void OnGUI()
         {
@@ -63,6 +64,15 @@ namespace Morphoria
                 Rect rect = new Rect(Screen.width * 0.5f - 180f, 28f, 360f, 48f);
                 DrawPanel(rect, form.accent);
                 GUI.Label(new Rect(rect.x + 18f, rect.y + 13f, rect.width - 36f, 24f), feedback, titleStyle);
+            }
+
+            string prompt = player.InteractionPrompt;
+            if (!string.IsNullOrEmpty(prompt))
+            {
+                Color promptColor = player.InteractionPromptReady ? form.accent : new Color(0.92f, 0.35f, 0.32f);
+                Rect rect = new Rect(Screen.width * 0.5f - 180f, Screen.height - 128f, 360f, 44f);
+                DrawPanel(rect, promptColor);
+                GUI.Label(new Rect(rect.x + 18f, rect.y + 10f, rect.width - 36f, 24f), prompt, promptStyle);
             }
 
             if (miniBoss != null && !miniBoss.IsDefeated)
@@ -149,6 +159,14 @@ namespace Morphoria
             smallStyle = new GUIStyle(GUI.skin.label)
             {
                 fontSize = 12,
+                fontStyle = FontStyle.Bold,
+                normal = { textColor = Color.white },
+                alignment = TextAnchor.MiddleCenter
+            };
+
+            promptStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 17,
                 fontStyle = FontStyle.Bold,
                 normal = { textColor = Color.white },
                 alignment = TextAnchor.MiddleCenter

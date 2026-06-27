@@ -31,6 +31,8 @@ namespace Morphoria
         private bool wheelOpen;
         private MorphoriaForm wheelSelection;
         private float forcedFormTimer;
+        private string interactionPrompt = string.Empty;
+        private bool interactionPromptReady;
 
         public event Action<MorphoriaForm> FormChanged;
 
@@ -44,6 +46,8 @@ namespace Morphoria
         public bool IsGliding { get; private set; }
         public float ForcedFormTimer => Mathf.Max(0f, forcedFormTimer);
         public string FeedbackText => Time.time - lastFeedbackTime < 2.25f ? feedbackText : string.Empty;
+        public string InteractionPrompt => interactionPrompt;
+        public bool InteractionPromptReady => interactionPromptReady;
 
         private void Awake()
         {
@@ -70,6 +74,7 @@ namespace Morphoria
 
             HandleFormInput();
             HandleMovement();
+            UpdateInteractionPrompt();
 
             if (Input.GetKeyDown(KeyCode.F) || Input.GetMouseButtonDown(0))
             {
@@ -283,28 +288,7 @@ namespace Morphoria
 
         public bool TryInteract()
         {
-            Collider[] hits = Physics.OverlapSphere(transform.position + Vector3.up * 0.8f, interactionRadius, interactionMask, QueryTriggerInteraction.Collide);
-            IFormInteractable best = null;
-            float bestDistance = float.MaxValue;
-
-            for (int i = 0; i < hits.Length; i++)
-            {
-                MonoBehaviour[] behaviours = hits[i].GetComponentsInParent<MonoBehaviour>();
-                for (int j = 0; j < behaviours.Length; j++)
-                {
-                    if (behaviours[j] is IFormInteractable interactable)
-                    {
-                        float distance = Vector3.Distance(transform.position, behaviours[j].transform.position);
-                        if (distance < bestDistance)
-                        {
-                            bestDistance = distance;
-                            best = interactable;
-                        }
-                    }
-                }
-            }
-
-            if (best == null)
+            if (!FindBestInteractable(out IFormInteractable best, out MonoBehaviour bestBehaviour))
             {
                 ShowFeedback("Rien a activer");
                 MorphoriaFeedbackSystem.GetOrCreate().Play(MorphoriaFeedbackCue.Denied, transform.position + Vector3.up, Color.red, 0.35f);
@@ -319,7 +303,55 @@ namespace Morphoria
             }
 
             best.Interact(this);
+            UpdateInteractionPrompt();
             return true;
+        }
+
+        private void UpdateInteractionPrompt()
+        {
+            if (!FindBestInteractable(out IFormInteractable best, out MonoBehaviour bestBehaviour))
+            {
+                interactionPrompt = string.Empty;
+                interactionPromptReady = false;
+                return;
+            }
+
+            interactionPromptReady = best.CanInteract(CurrentDefinition);
+            string hint = best.Hint(CurrentDefinition);
+            if (string.IsNullOrEmpty(hint))
+            {
+                hint = bestBehaviour != null ? bestBehaviour.gameObject.name : "Interaction";
+            }
+
+            interactionPrompt = interactionPromptReady ? "F  " + hint : hint;
+        }
+
+        private bool FindBestInteractable(out IFormInteractable best, out MonoBehaviour bestBehaviour)
+        {
+            Collider[] hits = Physics.OverlapSphere(transform.position + Vector3.up * 0.8f, interactionRadius, interactionMask, QueryTriggerInteraction.Collide);
+            best = null;
+            bestBehaviour = null;
+            float bestDistance = float.MaxValue;
+
+            for (int i = 0; i < hits.Length; i++)
+            {
+                MonoBehaviour[] behaviours = hits[i].GetComponentsInParent<MonoBehaviour>();
+                for (int j = 0; j < behaviours.Length; j++)
+                {
+                    if (behaviours[j] is IFormInteractable interactable)
+                    {
+                        float distance = Vector3.Distance(transform.position, behaviours[j].transform.position);
+                        if (distance < bestDistance)
+                        {
+                            bestDistance = distance;
+                            best = interactable;
+                            bestBehaviour = behaviours[j];
+                        }
+                    }
+                }
+            }
+
+            return best != null;
         }
     }
 }
