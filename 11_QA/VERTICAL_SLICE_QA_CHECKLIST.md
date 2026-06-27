@@ -41,9 +41,48 @@
 - Four villager cages can be opened after the mini-boss.
 - Exit portal completes only after villagers are saved.
 
+## Campaign Shell
+
+- Main menu opens and can start a new game.
+- Hub loads with player, HUD, pause menu, portals, and KO recovery.
+- World map shows the six level nodes in order.
+- Completing a level unlocks the next level.
+- The last level opens the finale scene.
+- Finale scene has the four heroes and Noctar redeemed.
+
+## Recovery
+
+- Enemy contact removes one heart.
+- Falling below the level removes one heart and returns to checkpoint.
+- At zero hearts, KO screen appears.
+- KO `Checkpoint` restores hearts and returns to the last checkpoint.
+- KO `Village`, `Carte`, and `Menu` navigate without leaving time paused.
+
+## Objective Feedback
+
+- HUD objective changes from boss to villagers to portal.
+- Boss hit updates the boss HUD.
+- Defeating Noctar uses Noctar-specific feedback.
+- Saving the final villager shows portal-ready feedback.
+- Blocked exit tells how many villagers remain.
+
+## Audio Feedback
+
+- Collectibles have pickup tones.
+- Form switching, dash, damage, checkpoint, boss hit, boss defeat, and level complete have cues.
+- Each scene has a low procedural ambience loop.
+- Pause, KO, result screen, and scene loads do not leave audio or time scale in a broken state.
+
 ## Visual Fidelity
 
 - Level reads as floating-island adventure.
 - Each form section keeps its reference-card color.
 - HUD uses dark panels with colored accents.
 - Cages and prism objects use blue/violet crystal language.
+
+## Automated Validation
+
+- Run `Morphoria/Build Game Shell Scenes` after generator changes.
+- Run `Morphoria/Validate Production Scenes` before commits.
+- Expected result: `Morphoria production validation passed for 10 scene(s).`
+- Run `git diff --check` before committing.

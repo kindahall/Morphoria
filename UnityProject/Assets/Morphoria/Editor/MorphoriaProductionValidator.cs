@@ -203,6 +203,7 @@ public static class MorphoriaProductionValidator
         }
 
         RequireOne<MorphoriaFeedbackSystem>(sceneName, issues);
+        ValidateFeedbackSystem(sceneName, issues);
 
         if (sceneName == MorphoriaGameContent.MainMenuScene)
         {
@@ -379,14 +380,39 @@ public static class MorphoriaProductionValidator
             {
                 issues.Add(sceneName + ": HUD targets do not match MorphoriaLevelInfo.");
             }
+
+            if (level.targetVillagers > 0 && hud.miniBoss == null)
+            {
+                issues.Add(sceneName + ": HUD should reference the level mini-boss for objective and boss feedback.");
+            }
         }
 
         for (int i = 0; i < exits.Length; i++)
         {
+            if (exits[i].requiredVillagers != level.targetVillagers)
+            {
+                issues.Add(sceneName + ": exit villager requirement should match MorphoriaLevelInfo.");
+            }
+
             if (exits[i].requiredVillagers > cages.Length)
             {
                 issues.Add(sceneName + ": exit requires " + exits[i].requiredVillagers + " villagers but scene has " + cages.Length + " cage(s).");
             }
+        }
+    }
+
+    private static void ValidateFeedbackSystem(string sceneName, List<string> issues)
+    {
+        MorphoriaFeedbackSystem[] systems = UnityEngine.Object.FindObjectsByType<MorphoriaFeedbackSystem>(FindObjectsInactive.Include);
+        if (systems.Length != 1)
+        {
+            return;
+        }
+
+        AudioSource[] sources = systems[0].GetComponents<AudioSource>();
+        if (sources.Length < 1)
+        {
+            issues.Add(sceneName + ": feedback system needs an AudioSource for cues and runtime ambience.");
         }
     }
 
