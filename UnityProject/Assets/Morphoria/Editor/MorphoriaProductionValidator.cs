@@ -21,6 +21,7 @@ public static class MorphoriaProductionValidator
         ValidateVisualReferences(issues);
         ValidateCharacterPrefabs(issues);
         ValidateCampaignProgression(issues);
+        ValidateHubRestorationProgression(issues);
 
         for (int i = 0; i < expectedScenePaths.Count; i++)
         {
@@ -229,8 +230,10 @@ public static class MorphoriaProductionValidator
             RequireOne<MorphoriaHud>(sceneName, issues);
             RequireOne<MorphoriaGameOverScreen>(sceneName, issues);
             RequireOne<MorphoriaHubState>(sceneName, issues);
+            RequireOne<MorphoriaHubRestoration>(sceneName, issues);
             RequireAtLeast<MorphoriaScenePortal>(sceneName, 2, issues);
             ValidatePlayerInventory(sceneName, issues);
+            ValidateHubRestorationScene(sceneName, issues);
             MorphoriaHud[] hubHuds = UnityEngine.Object.FindObjectsByType<MorphoriaHud>(FindObjectsInactive.Include);
             if (hubHuds.Length == 1 && hubHuds[0].showLevelGoals)
             {
@@ -244,6 +247,68 @@ public static class MorphoriaProductionValidator
 
         ValidatePlayerAvatarPrefabs(sceneName, issues);
         ValidateScenePortals(sceneName, issues);
+    }
+
+    private static void ValidateHubRestorationProgression(List<string> issues)
+    {
+        MorphoriaSaveData data = MorphoriaSaveSystem.CreateNew();
+        if (MorphoriaHubRestoration.CalculateStage(data) != 0)
+        {
+            issues.Add("Fresh save should show damaged village restoration stage.");
+        }
+
+        MorphoriaLevelInfo firstLevel = MorphoriaGameContent.Levels[0];
+        MorphoriaCampaignProgression.MarkLevelComplete(data, firstLevel.id, firstLevel.targetGoldenStars, firstLevel.targetPrismStars, firstLevel.targetVillagers);
+        if (MorphoriaHubRestoration.CalculateStage(data) < 1)
+        {
+            issues.Add("First level clear should advance the village restoration stage.");
+        }
+
+        for (int i = 1; i < MorphoriaGameContent.Levels.Length; i++)
+        {
+            MorphoriaLevelInfo level = MorphoriaGameContent.Levels[i];
+            MorphoriaCampaignProgression.MarkLevelComplete(data, level.id, level.targetGoldenStars, level.targetPrismStars, level.targetVillagers);
+        }
+
+        if (MorphoriaHubRestoration.CalculateStage(data) != 3)
+        {
+            issues.Add("Full campaign clear should restore Ecloria completely.");
+        }
+    }
+
+    private static void ValidateHubRestorationScene(string sceneName, List<string> issues)
+    {
+        MorphoriaHubRestoration[] restorations = UnityEngine.Object.FindObjectsByType<MorphoriaHubRestoration>(FindObjectsInactive.Include);
+        if (restorations.Length != 1)
+        {
+            return;
+        }
+
+        MorphoriaHubRestoration restoration = restorations[0];
+        if (restoration.damagedStage == null || restoration.damagedStage.Length == 0)
+        {
+            issues.Add(sceneName + ": hub restoration needs a damaged stage.");
+        }
+
+        if (restoration.repairedStage == null || restoration.repairedStage.Length == 0)
+        {
+            issues.Add(sceneName + ": hub restoration needs a repaired stage.");
+        }
+
+        if (restoration.gardenStage == null || restoration.gardenStage.Length == 0)
+        {
+            issues.Add(sceneName + ": hub restoration needs a garden stage.");
+        }
+
+        if (restoration.finaleStage == null || restoration.finaleStage.Length == 0)
+        {
+            issues.Add(sceneName + ": hub restoration needs a finale stage.");
+        }
+
+        if (restoration.heartLight == null)
+        {
+            issues.Add(sceneName + ": hub restoration should control the prism heart light.");
+        }
     }
 
     private static void ValidateMainMenuCharacters(string sceneName, List<string> issues)

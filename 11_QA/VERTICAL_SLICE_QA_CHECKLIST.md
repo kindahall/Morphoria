@@ -45,6 +45,7 @@
 
 - Main menu opens and can start a new game.
 - Hub loads with player, HUD, pause menu, portals, and KO recovery.
+- Hub shows damaged, repaired, garden, and final restoration states as campaign progress advances.
 - World map shows the six level nodes in order.
 - Completing a level unlocks the next level.
 - The last level opens the finale scene.

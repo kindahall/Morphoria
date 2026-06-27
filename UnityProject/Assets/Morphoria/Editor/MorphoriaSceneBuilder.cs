@@ -251,11 +251,18 @@ public static class MorphoriaSceneBuilder
         CreateBridge("Hub_Pont_Atelier", new Vector3(-5f, 0.1f, 1.8f), new Vector3(5f, 0.28f, 1.7f), paperMat, village);
         CreateBridge("Hub_Pont_Jardin", new Vector3(5f, 0.1f, 1.8f), new Vector3(5f, 0.28f, 1.7f), leafMat, village);
 
-        CreateCube("Hub_Coeur_Prismatique", new Vector3(0f, 1.55f, 2.4f), new Vector3(1.25f, 2.2f, 1.25f), prismMat, village).transform.rotation = Quaternion.Euler(0f, 38f, 45f);
+        GameObject hubHeart = CreateCube("Hub_Coeur_Prismatique", new Vector3(0f, 1.55f, 2.4f), new Vector3(1.25f, 2.2f, 1.25f), prismMat, village);
+        hubHeart.transform.rotation = Quaternion.Euler(0f, 38f, 45f);
+        Light hubHeartLight = hubHeart.AddComponent<Light>();
+        hubHeartLight.type = LightType.Point;
+        hubHeartLight.color = new Color(0.25f, 0.78f, 1f);
+        hubHeartLight.range = 6.2f;
+        hubHeartLight.intensity = 1.8f;
         CreateVillageHouse("Maison_Rokko", new Vector3(-5.1f, 0.75f, -3.4f), stoneMat, village);
         CreateVillageHouse("Maison_Luma", new Vector3(-1.8f, 0.75f, -4.6f), leafMat, village);
         CreateVillageHouse("Maison_Papyra", new Vector3(1.8f, 0.75f, -4.6f), paperMat, village);
         CreateVillageHouse("Maison_Cizo", new Vector3(5.1f, 0.75f, -3.4f), scissorsMat, village);
+        CreateHubRestorationState(village, root, hubHeartLight);
 
         CreateScenePortal("Portail_CarteDuMonde", new Vector3(0f, 1.1f, 5.2f), "Carte du monde", MorphoriaGameContent.WorldMapScene, string.Empty, root);
         CreateScenePortal("Portail_PontQuatreFormes", new Vector3(-6.4f, 1.1f, 1.1f), "Pont des Quatre Formes", string.Empty, MorphoriaGameContent.Levels[0].id, root);
@@ -844,6 +851,112 @@ public static class MorphoriaSceneBuilder
         roof.transform.rotation = Quaternion.Euler(0f, 45f, 0f);
     }
 
+    private static void CreateHubRestorationState(Transform village, Transform root, Light heartLight)
+    {
+        GameObject controller = new GameObject("Hub_Restoration_State");
+        controller.transform.SetParent(root, false);
+        MorphoriaHubRestoration restoration = controller.AddComponent<MorphoriaHubRestoration>();
+        restoration.heartLight = heartLight;
+
+        GameObject damaged = new GameObject("Hub_State_00_Damaged");
+        GameObject repaired = new GameObject("Hub_State_01_Repaired");
+        GameObject gardens = new GameObject("Hub_State_02_Gardens");
+        GameObject finale = new GameObject("Hub_State_03_Festival");
+        damaged.transform.SetParent(village, false);
+        repaired.transform.SetParent(village, false);
+        gardens.transform.SetParent(village, false);
+        finale.transform.SetParent(village, false);
+
+        CreateHubDamageDecor(damaged.transform);
+        CreateHubRepairDecor(repaired.transform);
+        CreateHubGardenDecor(gardens.transform);
+        CreateHubFestivalDecor(finale.transform);
+
+        restoration.damagedStage = new[] { damaged };
+        restoration.repairedStage = new[] { repaired };
+        restoration.gardenStage = new[] { gardens };
+        restoration.finaleStage = new[] { finale };
+    }
+
+    private static void CreateHubDamageDecor(Transform parent)
+    {
+        Vector3[] positions =
+        {
+            new Vector3(-5.1f, 1.62f, -3.4f),
+            new Vector3(-1.8f, 1.62f, -4.6f),
+            new Vector3(1.8f, 1.62f, -4.6f),
+            new Vector3(5.1f, 1.62f, -3.4f)
+        };
+
+        for (int i = 0; i < positions.Length; i++)
+        {
+            GameObject crack = CreateDecorCube("Hub_Degat_Fissure_" + i, positions[i] + new Vector3(0f, 0.04f, -0.78f), new Vector3(1.25f, 0.12f, 0.16f), dangerMat, parent);
+            crack.transform.rotation = Quaternion.Euler(0f, i * 24f, 38f);
+            GameObject debris = CreateDecorCube("Hub_Degat_Debris_" + i, positions[i] + new Vector3(i % 2 == 0 ? -0.78f : 0.78f, -1.18f, 0.72f), new Vector3(0.62f, 0.28f, 0.5f), darkRockMat, parent);
+            debris.transform.rotation = Quaternion.Euler(0f, 22f + i * 31f, 12f);
+        }
+
+        CreateDecorCube("Hub_Degat_Pont_Rompu_A", new Vector3(-5f, 0.48f, 1.8f), new Vector3(1.8f, 0.18f, 0.24f), darkRockMat, parent).transform.rotation = Quaternion.Euler(0f, 0f, -8f);
+        CreateDecorCube("Hub_Degat_Pont_Rompu_B", new Vector3(5f, 0.48f, 1.8f), new Vector3(1.8f, 0.18f, 0.24f), darkRockMat, parent).transform.rotation = Quaternion.Euler(0f, 0f, 8f);
+    }
+
+    private static void CreateHubRepairDecor(Transform parent)
+    {
+        Vector3[] beamPositions =
+        {
+            new Vector3(-5.1f, 1.72f, -2.45f),
+            new Vector3(-1.8f, 1.72f, -3.65f),
+            new Vector3(1.8f, 1.72f, -3.65f),
+            new Vector3(5.1f, 1.72f, -2.45f)
+        };
+
+        for (int i = 0; i < beamPositions.Length; i++)
+        {
+            CreateDecorCube("Hub_Repare_Poutre_" + i + "_A", beamPositions[i] + Vector3.left * 0.45f, new Vector3(0.14f, 1.35f, 0.14f), stoneMat, parent);
+            CreateDecorCube("Hub_Repare_Poutre_" + i + "_B", beamPositions[i] + Vector3.right * 0.45f, new Vector3(0.14f, 1.35f, 0.14f), stoneMat, parent);
+            GameObject plank = CreateDecorCube("Hub_Repare_Toit_" + i, beamPositions[i] + Vector3.up * 0.72f, new Vector3(1.4f, 0.14f, 0.22f), goldMat, parent);
+            plank.transform.rotation = Quaternion.Euler(0f, i * 18f, 0f);
+        }
+
+        CreateDecorCylinder("Hub_Repare_Lampe_Atelier", new Vector3(-9.7f, 1.45f, 0.9f), new Vector3(0.28f, 0.5f, 0.28f), crystalMat, parent, Quaternion.identity);
+        CreateDecorCylinder("Hub_Repare_Lampe_Jardin", new Vector3(9.7f, 1.45f, 0.9f), new Vector3(0.28f, 0.5f, 0.28f), crystalMat, parent, Quaternion.identity);
+    }
+
+    private static void CreateHubGardenDecor(Transform parent)
+    {
+        Vector3[] flowerPositions =
+        {
+            new Vector3(-7.2f, 0.58f, 3.2f),
+            new Vector3(-4.2f, 0.58f, 4.5f),
+            new Vector3(4.2f, 0.58f, 4.5f),
+            new Vector3(7.2f, 0.58f, 3.2f),
+            new Vector3(0f, 0.58f, -2.2f)
+        };
+
+        for (int i = 0; i < flowerPositions.Length; i++)
+        {
+            CreateDecorCylinder("Hub_Jardin_Tige_" + i, flowerPositions[i], new Vector3(0.08f, 0.44f, 0.08f), leafMat, parent, Quaternion.identity);
+            GameObject petalsA = CreateDecorCube("Hub_Jardin_Petales_" + i + "_A", flowerPositions[i] + Vector3.up * 0.48f, new Vector3(0.72f, 0.06f, 0.18f), i % 2 == 0 ? paperMat : goldMat, parent);
+            GameObject petalsB = CreateDecorCube("Hub_Jardin_Petales_" + i + "_B", flowerPositions[i] + Vector3.up * 0.5f, new Vector3(0.18f, 0.06f, 0.72f), i % 2 == 0 ? paperMat : goldMat, parent);
+            petalsA.transform.rotation = Quaternion.Euler(0f, i * 35f, 0f);
+            petalsB.transform.rotation = Quaternion.Euler(0f, 45f + i * 35f, 0f);
+        }
+
+        CreateDecorCube("Hub_Jardin_Ruban_Luma_A", new Vector3(-10f, 1.85f, 3.2f), new Vector3(2.4f, 0.12f, 0.34f), leafMat, parent).transform.rotation = Quaternion.Euler(0f, 0f, 8f);
+        CreateDecorCube("Hub_Jardin_Ruban_Luma_B", new Vector3(10f, 1.85f, 3.2f), new Vector3(2.4f, 0.12f, 0.34f), leafMat, parent).transform.rotation = Quaternion.Euler(0f, 0f, -8f);
+    }
+
+    private static void CreateHubFestivalDecor(Transform parent)
+    {
+        CreateDecorCylinder("Hub_Fete_Anneau_Coeur_A", new Vector3(0f, 2.8f, 2.4f), new Vector3(2.45f, 0.06f, 2.45f), crystalMat, parent, Quaternion.Euler(90f, 0f, 0f));
+        CreateDecorCylinder("Hub_Fete_Anneau_Coeur_B", new Vector3(0f, 2.8f, 2.4f), new Vector3(3.05f, 0.05f, 3.05f), prismMat, parent, Quaternion.Euler(90f, 0f, 0f));
+        CreateDecorCube("Hub_Fete_Banniere_Rokko", new Vector3(-4.4f, 2.75f, -1.8f), new Vector3(0.35f, 1.1f, 0.08f), stoneMat, parent);
+        CreateDecorCube("Hub_Fete_Banniere_Luma", new Vector3(-1.45f, 2.75f, -2.8f), new Vector3(0.35f, 1.1f, 0.08f), leafMat, parent);
+        CreateDecorCube("Hub_Fete_Banniere_Papyra", new Vector3(1.45f, 2.75f, -2.8f), new Vector3(0.35f, 1.1f, 0.08f), paperMat, parent);
+        CreateDecorCube("Hub_Fete_Banniere_Cizo", new Vector3(4.4f, 2.75f, -1.8f), new Vector3(0.35f, 1.1f, 0.08f), scissorsMat, parent);
+        CreateDecorCube("Hub_Fete_Prisme_Reuni", new Vector3(0f, 3.62f, 2.4f), new Vector3(0.56f, 0.56f, 0.56f), prismMat, parent).transform.rotation = Quaternion.Euler(0f, 45f, 45f);
+    }
+
     private static void CreateFormStatue(string name, Vector3 position, Material material, string prefabName, Transform parent)
     {
         CreateCylinder(name + "_Base", position, new Vector3(0.72f, 0.22f, 0.72f), darkRockMat, parent, Quaternion.identity);
@@ -1357,6 +1470,13 @@ public static class MorphoriaSceneBuilder
         return cube;
     }
 
+    private static GameObject CreateDecorCube(string name, Vector3 position, Vector3 scale, Material material, Transform parent)
+    {
+        GameObject cube = CreateCube(name, position, scale, material, parent);
+        DestroyColliderImmediate(cube);
+        return cube;
+    }
+
     private static GameObject CreateCylinder(string name, Vector3 position, Vector3 scale, Material material, Transform parent, Quaternion rotation)
     {
         GameObject cylinder = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
@@ -1367,6 +1487,13 @@ public static class MorphoriaSceneBuilder
         cylinder.transform.localScale = scale;
         Renderer renderer = cylinder.GetComponent<Renderer>();
         renderer.sharedMaterial = material;
+        return cylinder;
+    }
+
+    private static GameObject CreateDecorCylinder(string name, Vector3 position, Vector3 scale, Material material, Transform parent, Quaternion rotation)
+    {
+        GameObject cylinder = CreateCylinder(name, position, scale, material, parent, rotation);
+        DestroyColliderImmediate(cylinder);
         return cylinder;
     }
 
