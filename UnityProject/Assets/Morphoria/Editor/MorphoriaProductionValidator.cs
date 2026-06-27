@@ -237,6 +237,7 @@ public static class MorphoriaProductionValidator
         else if (sceneName == MorphoriaGameContent.WorldMapScene)
         {
             RequireOne<MorphoriaWorldMapScreen>(sceneName, issues);
+            ValidateWorldMapScene(sceneName, issues);
         }
         else if (sceneName == MorphoriaGameContent.FinaleScene)
         {
@@ -331,6 +332,65 @@ public static class MorphoriaProductionValidator
         if (restoration.heartLight == null)
         {
             issues.Add(sceneName + ": hub restoration should control the prism heart light.");
+        }
+    }
+
+    private static void ValidateWorldMapScene(string sceneName, List<string> issues)
+    {
+        MorphoriaWorldMapNode[] nodes = UnityEngine.Object.FindObjectsByType<MorphoriaWorldMapNode>(FindObjectsInactive.Include);
+        MorphoriaWorldMapRoute[] routes = UnityEngine.Object.FindObjectsByType<MorphoriaWorldMapRoute>(FindObjectsInactive.Include);
+
+        if (nodes.Length != MorphoriaGameContent.Levels.Length)
+        {
+            issues.Add(sceneName + ": expected " + MorphoriaGameContent.Levels.Length + " dynamic map nodes, found " + nodes.Length + ".");
+        }
+
+        if (routes.Length != MorphoriaGameContent.Levels.Length - 1)
+        {
+            issues.Add(sceneName + ": expected " + (MorphoriaGameContent.Levels.Length - 1) + " dynamic map routes, found " + routes.Length + ".");
+        }
+
+        HashSet<string> nodeIds = new HashSet<string>();
+        for (int i = 0; i < nodes.Length; i++)
+        {
+            MorphoriaWorldMapNode node = nodes[i];
+            if (string.IsNullOrEmpty(node.levelId))
+            {
+                issues.Add(sceneName + ": map node " + node.name + " needs a level id.");
+                continue;
+            }
+
+            if (!nodeIds.Add(node.levelId))
+            {
+                issues.Add(sceneName + ": duplicate map node for " + node.levelId + ".");
+            }
+
+            if (node.lockedVisual == null || node.unlockedVisual == null || node.completedVisual == null || node.glowLight == null || node.stateLabel == null)
+            {
+                issues.Add(sceneName + ": map node " + node.levelId + " is missing visual state references.");
+            }
+        }
+
+        for (int i = 0; i < MorphoriaGameContent.Levels.Length; i++)
+        {
+            if (!nodeIds.Contains(MorphoriaGameContent.Levels[i].id))
+            {
+                issues.Add(sceneName + ": missing map node for " + MorphoriaGameContent.Levels[i].id + ".");
+            }
+        }
+
+        for (int i = 0; i < routes.Length; i++)
+        {
+            MorphoriaWorldMapRoute route = routes[i];
+            if (string.IsNullOrEmpty(route.fromLevelId) || string.IsNullOrEmpty(route.toLevelId))
+            {
+                issues.Add(sceneName + ": map route " + route.name + " needs level ids.");
+            }
+
+            if (route.lockedVisual == null || route.unlockedVisual == null || route.routeLight == null)
+            {
+                issues.Add(sceneName + ": map route " + route.name + " is missing visual state references.");
+            }
         }
     }
 

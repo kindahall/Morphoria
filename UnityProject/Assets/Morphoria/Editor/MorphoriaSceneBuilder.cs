@@ -300,23 +300,96 @@ public static class MorphoriaSceneBuilder
         for (int i = 0; i < nodes.Length; i++)
         {
             MorphoriaLevelInfo level = MorphoriaGameContent.Levels[i];
-            MorphoriaWorldInfo world = MorphoriaGameContent.GetWorld(level.worldId);
-            Material material = GetPrimaryMaterial(level);
-            CreateCylinder("Map_Node_" + level.sceneName, nodes[i], new Vector3(0.72f, 0.16f, 0.72f), material, root, Quaternion.identity);
-            CreateLabel((i + 1).ToString(), nodes[i] + new Vector3(0f, 0.26f, -0.38f), world.color, root);
+            CreateWorldMapNode(level, i + 1, nodes[i], root);
 
             if (i > 0)
             {
-                Vector3 midpoint = (nodes[i - 1] + nodes[i]) * 0.5f;
-                float length = Vector3.Distance(nodes[i - 1], nodes[i]);
-                GameObject route = CreateCube("Map_Route_" + i, midpoint, new Vector3(0.18f, 0.08f, length), crystalMat, root);
-                route.transform.rotation = Quaternion.LookRotation(nodes[i] - nodes[i - 1], Vector3.up);
+                CreateWorldMapRoute(i, MorphoriaGameContent.Levels[i - 1], level, nodes[i - 1], nodes[i], root);
             }
         }
 
         GameObject controller = new GameObject("WorldMap_Controller");
         controller.AddComponent<MorphoriaWorldMapScreen>();
         EditorSceneManager.SaveScene(scene, WorldMapPath);
+    }
+
+    private static void CreateWorldMapNode(MorphoriaLevelInfo level, int number, Vector3 position, Transform parent)
+    {
+        MorphoriaWorldInfo world = MorphoriaGameContent.GetWorld(level.worldId);
+        GameObject root = new GameObject("Map_Node_State_" + level.sceneName);
+        root.transform.SetParent(parent, false);
+        root.transform.localPosition = position;
+
+        GameObject locked = CreateDecorCylinder("Map_Node_" + level.sceneName + "_Locked", Vector3.zero, new Vector3(0.72f, 0.14f, 0.72f), darkRockMat, root.transform, Quaternion.identity);
+        GameObject unlocked = CreateDecorCylinder("Map_Node_" + level.sceneName + "_Open", new Vector3(0f, 0.04f, 0f), new Vector3(0.78f, 0.16f, 0.78f), GetPrimaryMaterial(level), root.transform, Quaternion.identity);
+
+        GameObject completed = new GameObject("Map_Node_" + level.sceneName + "_Complete");
+        completed.transform.SetParent(root.transform, false);
+        CreateDecorCylinder("Map_Node_" + level.sceneName + "_Complete_Ring", new Vector3(0f, 0.1f, 0f), new Vector3(1.0f, 0.07f, 1.0f), goldMat, completed.transform, Quaternion.identity);
+        GameObject prism = CreateDecorCube("Map_Node_" + level.sceneName + "_Complete_Prism", new Vector3(0f, 0.32f, 0f), new Vector3(0.32f, 0.32f, 0.32f), prismMat, completed.transform);
+        prism.transform.localRotation = Quaternion.Euler(0f, 45f, 45f);
+
+        TextMesh numberLabel = CreateWorldMapText("Map_Node_" + level.sceneName + "_Number", number.ToString("00"), new Vector3(0f, 0.34f, -0.34f), 0.18f, Color.Lerp(world.color, Color.white, 0.35f), root.transform);
+        numberLabel.fontStyle = FontStyle.Bold;
+        TextMesh stateLabel = CreateWorldMapText("Map_Node_" + level.sceneName + "_State", "--", new Vector3(0f, 0.38f, 0.66f), 0.12f, Color.white, root.transform);
+
+        Light light = root.AddComponent<Light>();
+        light.type = LightType.Point;
+        light.color = Color.Lerp(world.color, Color.white, 0.18f);
+        light.range = 4.2f;
+        light.intensity = 1.3f;
+
+        MorphoriaWorldMapNode node = root.AddComponent<MorphoriaWorldMapNode>();
+        node.levelId = level.id;
+        node.lockedVisual = locked;
+        node.unlockedVisual = unlocked;
+        node.completedVisual = completed;
+        node.glowLight = light;
+        node.stateLabel = stateLabel;
+    }
+
+    private static void CreateWorldMapRoute(int index, MorphoriaLevelInfo fromLevel, MorphoriaLevelInfo toLevel, Vector3 from, Vector3 to, Transform parent)
+    {
+        Vector3 direction = to - from;
+        Vector3 midpoint = (from + to) * 0.5f + Vector3.up * 0.02f;
+        float length = direction.magnitude;
+
+        GameObject root = new GameObject("Map_Route_State_" + index.ToString("00"));
+        root.transform.SetParent(parent, false);
+        root.transform.localPosition = midpoint;
+        root.transform.localRotation = Quaternion.LookRotation(direction, Vector3.up);
+
+        GameObject locked = CreateDecorCube("Map_Route_" + index.ToString("00") + "_Locked", Vector3.zero, new Vector3(0.16f, 0.06f, length), darkRockMat, root.transform);
+        GameObject open = CreateDecorCube("Map_Route_" + index.ToString("00") + "_Open", Vector3.up * 0.03f, new Vector3(0.28f, 0.08f, length), crystalMat, root.transform);
+
+        Light light = root.AddComponent<Light>();
+        light.type = LightType.Point;
+        light.color = crystalMat.color;
+        light.range = Mathf.Clamp(length * 0.85f, 3.2f, 6.5f);
+        light.intensity = 0.9f;
+
+        MorphoriaWorldMapRoute route = root.AddComponent<MorphoriaWorldMapRoute>();
+        route.fromLevelId = fromLevel.id;
+        route.toLevelId = toLevel.id;
+        route.lockedVisual = locked;
+        route.unlockedVisual = open;
+        route.routeLight = light;
+    }
+
+    private static TextMesh CreateWorldMapText(string name, string text, Vector3 localPosition, float characterSize, Color color, Transform parent)
+    {
+        GameObject label = new GameObject(name);
+        label.transform.SetParent(parent, false);
+        label.transform.localPosition = localPosition;
+        label.transform.localRotation = Quaternion.Euler(68f, 0f, 0f);
+        TextMesh mesh = label.AddComponent<TextMesh>();
+        mesh.text = text;
+        mesh.anchor = TextAnchor.MiddleCenter;
+        mesh.alignment = TextAlignment.Center;
+        mesh.characterSize = characterSize;
+        mesh.fontSize = 44;
+        mesh.color = color;
+        return mesh;
     }
 
     private static void BuildFinaleScene()

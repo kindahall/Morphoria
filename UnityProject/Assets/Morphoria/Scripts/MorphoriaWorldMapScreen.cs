@@ -26,14 +26,15 @@ namespace Morphoria
             EnsureStyles();
             DrawBackdrop();
 
-            bool wide = Screen.width >= 1040f;
-            float margin = 32f;
+            bool wide = Screen.width >= 1120f;
+            float margin = wide ? 24f : 32f;
             float detailWidth = wide ? 360f : 0f;
+            float listWidth = wide ? 360f : Screen.width - margin * 2f;
             Rect panel = wide
-                ? new Rect(margin, 28f, Screen.width - detailWidth - 80f, Screen.height - 56f)
+                ? new Rect(margin, 28f, listWidth, Screen.height - 56f)
                 : new Rect(margin, 28f, Screen.width - margin * 2f, Screen.height * 0.62f);
             Rect detail = wide
-                ? new Rect(panel.xMax + 16f, 28f, detailWidth, Screen.height - 56f)
+                ? new Rect(Screen.width - detailWidth - margin, 28f, detailWidth, Screen.height - 56f)
                 : new Rect(margin, panel.yMax + 12f, panel.width, Screen.height - panel.yMax - 40f);
 
             DrawLevelList(panel);
@@ -129,7 +130,7 @@ namespace Morphoria
         private void DrawBackdrop()
         {
             Color old = GUI.color;
-            GUI.color = new Color(0.08f, 0.12f, 0.18f, 1f);
+            GUI.color = new Color(0.05f, 0.08f, 0.12f, 0.42f);
             GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
             GUI.color = old;
         }
