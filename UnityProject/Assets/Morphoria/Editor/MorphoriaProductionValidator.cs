@@ -583,9 +583,14 @@ public static class MorphoriaProductionValidator
         }
 
         AudioSource[] sources = systems[0].GetComponents<AudioSource>();
-        if (sources.Length < 1)
+        if (sources.Length < 2)
         {
-            issues.Add(sceneName + ": feedback system needs an AudioSource for cues and runtime ambience.");
+            issues.Add(sceneName + ": feedback system needs separate AudioSources for cues and runtime ambience.");
+        }
+
+        if (!systems[0].emitPulseRings || !systems[0].emitFlashLights)
+        {
+            issues.Add(sceneName + ": feedback system visual rings and flashes should be enabled.");
         }
     }
 

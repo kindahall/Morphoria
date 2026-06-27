@@ -32,6 +32,11 @@ namespace Morphoria
         private AudioClip ambienceClip;
         private string ambienceScene = string.Empty;
         private Material particleMaterial;
+        private Material lineMaterial;
+
+        [Header("Visual Feedback")]
+        public bool emitPulseRings = true;
+        public bool emitFlashLights = true;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void RuntimeBootstrap()
@@ -96,6 +101,8 @@ namespace Morphoria
             intensity = Mathf.Clamp01(intensity);
             PlayTone(cue, intensity);
             SpawnBurst(cue, position, color, intensity);
+            SpawnPulseRing(cue, position, color, intensity);
+            SpawnFlashLight(cue, position, color, intensity);
             ShakeCamera(cue, intensity);
         }
 
@@ -259,6 +266,14 @@ namespace Morphoria
             shape.shapeType = ParticleSystemShapeType.Sphere;
             shape.radius = Mathf.Lerp(0.22f, 0.7f, intensity);
 
+            ParticleSystem.ColorOverLifetimeModule colorOverLifetime = particles.colorOverLifetime;
+            colorOverLifetime.enabled = true;
+            Gradient gradient = new Gradient();
+            gradient.SetKeys(
+                new[] { new GradientColorKey(color, 0f), new GradientColorKey(Color.Lerp(color, Color.white, 0.35f), 0.45f), new GradientColorKey(color, 1f) },
+                new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0.65f, 0.55f), new GradientAlphaKey(0f, 1f) });
+            colorOverLifetime.color = gradient;
+
             ParticleSystemRenderer renderer = burst.GetComponent<ParticleSystemRenderer>();
             renderer.sharedMaterial = ParticleMaterial();
             renderer.renderMode = ParticleSystemRenderMode.Billboard;
@@ -273,6 +288,121 @@ namespace Morphoria
             if (burst != null)
             {
                 Destroy(burst);
+            }
+        }
+
+        private void SpawnPulseRing(MorphoriaFeedbackCue cue, Vector3 position, Color color, float intensity)
+        {
+            if (!emitPulseRings)
+            {
+                return;
+            }
+
+            float duration = RingDuration(cue);
+            if (duration <= 0f)
+            {
+                return;
+            }
+
+            int rings = RingCount(cue);
+            for (int i = 0; i < rings; i++)
+            {
+                GameObject ring = new GameObject("FX_Ring_" + cue);
+                ring.transform.position = position + Vector3.up * (0.05f + i * 0.08f);
+                LineRenderer line = ring.AddComponent<LineRenderer>();
+                line.useWorldSpace = false;
+                line.loop = true;
+                line.positionCount = 64;
+                line.widthMultiplier = Mathf.Lerp(0.035f, 0.08f, intensity);
+                line.sharedMaterial = LineMaterial();
+                line.numCapVertices = 4;
+                line.numCornerVertices = 4;
+
+                float delay = i * 0.08f;
+                float startRadius = Mathf.Lerp(0.25f, 0.55f, intensity);
+                float endRadius = RingRadius(cue, intensity) + i * 0.32f;
+                StartCoroutine(AnimatePulseRing(ring, line, color, startRadius, endRadius, duration, delay));
+            }
+        }
+
+        private void SpawnFlashLight(MorphoriaFeedbackCue cue, Vector3 position, Color color, float intensity)
+        {
+            if (!emitFlashLights || cue == MorphoriaFeedbackCue.Denied)
+            {
+                return;
+            }
+
+            float brightness = FlashBrightness(cue) * intensity;
+            if (brightness <= 0f)
+            {
+                return;
+            }
+
+            GameObject flash = new GameObject("FX_Flash_" + cue);
+            flash.transform.position = position + Vector3.up * 0.25f;
+            Light light = flash.AddComponent<Light>();
+            light.type = LightType.Point;
+            light.color = Color.Lerp(color, Color.white, 0.22f);
+            light.range = Mathf.Lerp(2.2f, 6.5f, intensity);
+            light.intensity = brightness;
+            StartCoroutine(FadeFlashLight(flash, light, brightness, FlashDuration(cue)));
+        }
+
+        private IEnumerator AnimatePulseRing(GameObject ring, LineRenderer line, Color color, float startRadius, float endRadius, float duration, float delay)
+        {
+            if (delay > 0f)
+            {
+                yield return new WaitForSeconds(delay);
+            }
+
+            float elapsed = 0f;
+            while (elapsed < duration && ring != null && line != null)
+            {
+                float t = Mathf.Clamp01(elapsed / duration);
+                float eased = 1f - Mathf.Pow(1f - t, 2f);
+                float radius = Mathf.Lerp(startRadius, endRadius, eased);
+                SetRingPositions(line, radius);
+
+                Color faded = color;
+                faded.a = Mathf.Lerp(0.72f, 0f, t);
+                line.startColor = faded;
+                line.endColor = Color.Lerp(faded, Color.white, 0.2f);
+                line.widthMultiplier = Mathf.Lerp(line.widthMultiplier, 0.01f, t);
+
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            if (ring != null)
+            {
+                Destroy(ring);
+            }
+        }
+
+        private IEnumerator FadeFlashLight(GameObject flash, Light light, float startIntensity, float duration)
+        {
+            float elapsed = 0f;
+            while (elapsed < duration && light != null)
+            {
+                float t = Mathf.Clamp01(elapsed / duration);
+                light.intensity = Mathf.Lerp(startIntensity, 0f, t * t);
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            if (flash != null)
+            {
+                Destroy(flash);
+            }
+        }
+
+        private static void SetRingPositions(LineRenderer line, float radius)
+        {
+            int count = line.positionCount;
+            for (int i = 0; i < count; i++)
+            {
+                float angle = i / (float)count * Mathf.PI * 2f;
+                line.SetPosition(i, new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius));
             }
         }
 
@@ -301,6 +431,18 @@ namespace Morphoria
             Shader shader = Shader.Find("Sprites/Default") ?? Shader.Find("Standard");
             particleMaterial = new Material(shader);
             return particleMaterial;
+        }
+
+        private Material LineMaterial()
+        {
+            if (lineMaterial != null)
+            {
+                return lineMaterial;
+            }
+
+            Shader shader = Shader.Find("Sprites/Default") ?? Shader.Find("Unlit/Color") ?? Shader.Find("Standard");
+            lineMaterial = new Material(shader);
+            return lineMaterial;
         }
 
         private static ToneSpec SpecFor(MorphoriaFeedbackCue cue)
@@ -370,6 +512,92 @@ namespace Morphoria
                     return 28;
                 default:
                     return 16;
+            }
+        }
+
+        private static int RingCount(MorphoriaFeedbackCue cue)
+        {
+            switch (cue)
+            {
+                case MorphoriaFeedbackCue.LevelComplete:
+                case MorphoriaFeedbackCue.BossDefeated:
+                    return 3;
+                case MorphoriaFeedbackCue.FormSwitch:
+                case MorphoriaFeedbackCue.Checkpoint:
+                case MorphoriaFeedbackCue.VillagerSaved:
+                    return 2;
+                default:
+                    return 1;
+            }
+        }
+
+        private static float RingDuration(MorphoriaFeedbackCue cue)
+        {
+            switch (cue)
+            {
+                case MorphoriaFeedbackCue.Damage:
+                    return 0.24f;
+                case MorphoriaFeedbackCue.Denied:
+                    return 0.2f;
+                case MorphoriaFeedbackCue.LevelComplete:
+                case MorphoriaFeedbackCue.BossDefeated:
+                    return 0.72f;
+                default:
+                    return 0.42f;
+            }
+        }
+
+        private static float RingRadius(MorphoriaFeedbackCue cue, float intensity)
+        {
+            switch (cue)
+            {
+                case MorphoriaFeedbackCue.LevelComplete:
+                case MorphoriaFeedbackCue.BossDefeated:
+                    return Mathf.Lerp(2.4f, 4.2f, intensity);
+                case MorphoriaFeedbackCue.Checkpoint:
+                case MorphoriaFeedbackCue.VillagerSaved:
+                    return Mathf.Lerp(1.4f, 2.4f, intensity);
+                case MorphoriaFeedbackCue.Damage:
+                case MorphoriaFeedbackCue.Denied:
+                    return Mathf.Lerp(0.7f, 1.1f, intensity);
+                default:
+                    return Mathf.Lerp(0.9f, 1.8f, intensity);
+            }
+        }
+
+        private static float FlashBrightness(MorphoriaFeedbackCue cue)
+        {
+            switch (cue)
+            {
+                case MorphoriaFeedbackCue.CollectGolden:
+                case MorphoriaFeedbackCue.CollectPrism:
+                    return 1.35f;
+                case MorphoriaFeedbackCue.FormSwitch:
+                case MorphoriaFeedbackCue.AbilitySuccess:
+                    return 1.7f;
+                case MorphoriaFeedbackCue.Checkpoint:
+                case MorphoriaFeedbackCue.VillagerSaved:
+                    return 2.2f;
+                case MorphoriaFeedbackCue.BossDefeated:
+                case MorphoriaFeedbackCue.LevelComplete:
+                    return 3.2f;
+                default:
+                    return 0.9f;
+            }
+        }
+
+        private static float FlashDuration(MorphoriaFeedbackCue cue)
+        {
+            switch (cue)
+            {
+                case MorphoriaFeedbackCue.BossDefeated:
+                case MorphoriaFeedbackCue.LevelComplete:
+                    return 0.62f;
+                case MorphoriaFeedbackCue.Checkpoint:
+                case MorphoriaFeedbackCue.VillagerSaved:
+                    return 0.42f;
+                default:
+                    return 0.26f;
             }
         }
 

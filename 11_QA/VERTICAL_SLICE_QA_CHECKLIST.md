@@ -77,6 +77,7 @@
 ## Audio Feedback
 
 - Collectibles have pickup tones.
+- Important actions spawn readable particle bursts, pulse rings, and short light flashes.
 - Form switching, dash, damage, checkpoint, boss hit, boss defeat, and level complete have cues.
 - Each scene has a low procedural ambience loop.
 - Pause, KO, result screen, and scene loads do not leave audio or time scale in a broken state.

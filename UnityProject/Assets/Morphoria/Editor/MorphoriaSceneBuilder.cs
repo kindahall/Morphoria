@@ -882,6 +882,7 @@ public static class MorphoriaSceneBuilder
     {
         GameObject feedback = new GameObject("Morphoria_FeedbackSystem");
         feedback.AddComponent<AudioSource>();
+        feedback.AddComponent<AudioSource>();
         feedback.AddComponent<MorphoriaFeedbackSystem>();
     }
 
