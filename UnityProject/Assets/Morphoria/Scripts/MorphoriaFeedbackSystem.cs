@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Morphoria
 {
@@ -27,6 +28,9 @@ namespace Morphoria
 
         private readonly Dictionary<MorphoriaFeedbackCue, AudioClip> clips = new Dictionary<MorphoriaFeedbackCue, AudioClip>();
         private AudioSource audioSource;
+        private AudioSource ambienceSource;
+        private AudioClip ambienceClip;
+        private string ambienceScene = string.Empty;
         private Material particleMaterial;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -71,6 +75,20 @@ namespace Morphoria
             audioSource.playOnAwake = false;
             audioSource.spatialBlend = 0f;
             audioSource.volume = 0.74f;
+
+            ConfigureAmbienceSource();
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
+            SceneManager.sceneLoaded += HandleSceneLoaded;
+            StartAmbienceForScene(SceneManager.GetActiveScene().name);
+        }
+
+        private void OnDestroy()
+        {
+            if (Instance == this)
+            {
+                SceneManager.sceneLoaded -= HandleSceneLoaded;
+                Instance = null;
+            }
         }
 
         public void Play(MorphoriaFeedbackCue cue, Vector3 position, Color color, float intensity = 1f)
@@ -98,6 +116,94 @@ namespace Morphoria
             AudioClip clip = ClipFor(cue);
             audioSource.pitch = PitchFor(cue);
             audioSource.PlayOneShot(clip, VolumeFor(cue) * intensity);
+        }
+
+        private void ConfigureAmbienceSource()
+        {
+            AudioSource[] sources = GetComponents<AudioSource>();
+            if (sources.Length > 1)
+            {
+                ambienceSource = sources[1];
+            }
+            else
+            {
+                ambienceSource = gameObject.AddComponent<AudioSource>();
+            }
+
+            ambienceSource.playOnAwake = false;
+            ambienceSource.loop = true;
+            ambienceSource.spatialBlend = 0f;
+            ambienceSource.priority = 180;
+        }
+
+        private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            StartAmbienceForScene(scene.name);
+        }
+
+        private void StartAmbienceForScene(string sceneName)
+        {
+            if (ambienceSource == null)
+            {
+                return;
+            }
+
+            if (string.IsNullOrEmpty(sceneName))
+            {
+                sceneName = "Bootstrap";
+            }
+
+            if (ambienceScene == sceneName && ambienceSource.isPlaying)
+            {
+                return;
+            }
+
+            AmbienceSpec spec = AmbienceSpecFor(sceneName);
+            ambienceScene = sceneName;
+            if (ambienceClip != null)
+            {
+                Destroy(ambienceClip);
+            }
+
+            ambienceClip = CreateAmbienceClip(sceneName, spec);
+            ambienceSource.clip = ambienceClip;
+            ambienceSource.volume = spec.volume;
+            ambienceSource.pitch = 1f;
+            ambienceSource.Play();
+        }
+
+        private static AudioClip CreateAmbienceClip(string sceneName, AmbienceSpec spec)
+        {
+            const int sampleRate = 24000;
+            const float duration = 8f;
+            int samples = Mathf.RoundToInt(duration * sampleRate);
+            float[] data = new float[samples];
+            float root = Tuned(spec.rootFrequency, duration);
+            float low = Tuned(spec.rootFrequency * 0.5f, duration);
+            float fifth = Tuned(spec.fifthFrequency, duration);
+            float high = Tuned(spec.shimmerFrequency, duration);
+
+            for (int i = 0; i < samples; i++)
+            {
+                float t = i / (float)sampleRate;
+                float drift = 0.72f + Mathf.Sin(2f * Mathf.PI * 0.125f * t) * 0.12f;
+                float pulse = 0.68f + Mathf.Sin(2f * Mathf.PI * 0.25f * t + spec.phase) * 0.08f;
+                float pad =
+                    Mathf.Sin(2f * Mathf.PI * root * t) * 0.46f +
+                    Mathf.Sin(2f * Mathf.PI * fifth * t) * 0.28f +
+                    Mathf.Sin(2f * Mathf.PI * low * t) * 0.22f;
+                float shimmer = Mathf.Sin(2f * Mathf.PI * high * t) * Mathf.Sin(2f * Mathf.PI * 0.5f * t) * 0.04f;
+                data[i] = (pad * drift * pulse + shimmer * spec.brightness) * 0.13f;
+            }
+
+            AudioClip clip = AudioClip.Create("Morphoria_Ambience_" + sceneName, samples, 1, sampleRate, false);
+            clip.SetData(data, 0);
+            return clip;
+        }
+
+        private static float Tuned(float frequency, float duration)
+        {
+            return Mathf.Max(1f, Mathf.Round(frequency * duration) / duration);
         }
 
         private AudioClip ClipFor(MorphoriaFeedbackCue cue)
@@ -286,6 +392,46 @@ namespace Morphoria
             }
         }
 
+        private static AmbienceSpec AmbienceSpecFor(string sceneName)
+        {
+            MorphoriaLevelInfo level = MorphoriaGameContent.GetLevelByScene(sceneName);
+            if (level != null)
+            {
+                switch (level.worldId)
+                {
+                    case "canyon":
+                        return new AmbienceSpec(86f, 129f, 620f, 0.11f, 0.7f, 1.1f);
+                    case "gardens":
+                        return new AmbienceSpec(146f, 219f, 980f, 0.12f, 1.15f, 0.35f);
+                    case "archives":
+                        return new AmbienceSpec(132f, 198f, 760f, 0.115f, 1.05f, 2.2f);
+                    case "forge":
+                        return new AmbienceSpec(96f, 144f, 540f, 0.105f, 0.85f, 2.9f);
+                    case "fortress":
+                        return new AmbienceSpec(74f, 111f, 666f, 0.12f, 0.9f, 3.5f);
+                    default:
+                        return new AmbienceSpec(124f, 186f, 820f, 0.115f, 1.0f, 0.8f);
+                }
+            }
+
+            if (sceneName == MorphoriaGameContent.MainMenuScene)
+            {
+                return new AmbienceSpec(118f, 177f, 920f, 0.12f, 1.08f, 0.4f);
+            }
+
+            if (sceneName == MorphoriaGameContent.HubScene || sceneName == MorphoriaGameContent.FinaleScene)
+            {
+                return new AmbienceSpec(164f, 246f, 1040f, 0.13f, 1.18f, 0.15f);
+            }
+
+            if (sceneName == MorphoriaGameContent.WorldMapScene)
+            {
+                return new AmbienceSpec(102f, 153f, 700f, 0.105f, 0.95f, 1.8f);
+            }
+
+            return new AmbienceSpec(124f, 186f, 760f, 0.1f, 1f, 0f);
+        }
+
         private readonly struct ToneSpec
         {
             public readonly float startFrequency;
@@ -297,6 +443,26 @@ namespace Morphoria
                 this.startFrequency = startFrequency;
                 this.endFrequency = endFrequency;
                 this.duration = duration;
+            }
+        }
+
+        private readonly struct AmbienceSpec
+        {
+            public readonly float rootFrequency;
+            public readonly float fifthFrequency;
+            public readonly float shimmerFrequency;
+            public readonly float volume;
+            public readonly float brightness;
+            public readonly float phase;
+
+            public AmbienceSpec(float rootFrequency, float fifthFrequency, float shimmerFrequency, float volume, float brightness, float phase)
+            {
+                this.rootFrequency = rootFrequency;
+                this.fifthFrequency = fifthFrequency;
+                this.shimmerFrequency = shimmerFrequency;
+                this.volume = volume;
+                this.brightness = brightness;
+                this.phase = phase;
             }
         }
     }
