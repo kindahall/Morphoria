@@ -112,6 +112,7 @@ public static class MorphoriaSceneBuilder
         CreateBridge("Pont_Ciseaux_Puzzle", new Vector3(24f, 0.1f, -1.5f), new Vector3(7f, 0.3f, 2f), scissorsMat, environment);
         CreateBridge("Pont_Puzzle_Arene", new Vector3(38f, 0.1f, 0f), new Vector3(7f, 0.3f, 2.4f), neutralMat, environment);
         CreateBridge("Pont_Arene_Sortie", new Vector3(51.5f, 0.1f, 1f), new Vector3(6f, 0.3f, 2.2f), crystalMat, environment);
+        CreateVerticalSliceLandmarks(path, environment);
         CreateRouteLanguage("Route_Pont_Quatre_Formes", path, null, root);
 
         GameObject fragileBridge = CreateBridge("Pont_Fragile_Evite_Rokko", new Vector3(-17.4f, 1.15f, 2.2f), new Vector3(5.8f, 0.26f, 2.1f), leafMat, environment);
@@ -490,6 +491,7 @@ public static class MorphoriaSceneBuilder
         }
 
         CreateRouteLanguage("Route_" + level.sceneName, path, level, root);
+        CreateWorldLandmarks(level, path, environment);
         CreateAdventureMechanics(level, obstacles, environment);
         CreateAdventureEnemies(level, path, enemies);
         CreateCheckpoint(path[3], root);
@@ -620,6 +622,157 @@ public static class MorphoriaSceneBuilder
             default:
                 return MorphoriaAbility.Any;
         }
+    }
+
+    private static void CreateVerticalSliceLandmarks(Vector3[] path, Transform parent)
+    {
+        Transform root = new GameObject("WorldLandmarks_Pont_Quatre_Formes").transform;
+        root.SetParent(parent, false);
+
+        CreatePrismObeliskLandmark("Bridge_Landmark_Ecloria_Heart", path[0] + new Vector3(-2.5f, 0f, 2.9f), 0.9f, root);
+        CreateStoneArchLandmark("Bridge_Landmark_Rokko_Arch", path[1] + new Vector3(-1.6f, 0f, 2.9f), 1.0f, root);
+        CreateLeafWindLandmark("Bridge_Landmark_Luma_WindTree", path[2] + new Vector3(2.2f, 0f, 2.5f), 1.0f, root);
+        CreatePaperOrigamiLandmark("Bridge_Landmark_Papyra_Folds", path[3] + new Vector3(1.9f, 0f, 2.7f), 1.0f, root);
+        CreateScissorForgeLandmark("Bridge_Landmark_Cizo_Gear", path[4] + new Vector3(2.1f, 0f, -2.7f), 1.0f, root);
+        CreatePrismObeliskLandmark("Bridge_Landmark_Prism_Cage", path[6] + new Vector3(-2.6f, 0f, -3.6f), 1.25f, root);
+        CreateWaterfallLandmark("Bridge_Landmark_Exit_Cascade", path[7] + new Vector3(2.2f, 0f, 2.6f), 0.85f, root);
+    }
+
+    private static void CreateWorldLandmarks(MorphoriaLevelInfo level, Vector3[] path, Transform parent)
+    {
+        Transform root = new GameObject("WorldLandmarks_" + level.sceneName).transform;
+        root.SetParent(parent, false);
+
+        if (level.worldId == "canyon")
+        {
+            CreateStoneArchLandmark("Canyon_Landmark_RocGate", path[1] + new Vector3(-1.8f, 0f, 2.8f), 1.1f, root);
+            CreateStoneArchLandmark("Canyon_Landmark_FracturedArch", path[3] + new Vector3(2.2f, 0f, -2.7f), 0.9f, root);
+            CreatePrismObeliskLandmark("Canyon_Landmark_AmberHeart", path[4] + new Vector3(-2.2f, 0f, 2.9f), 0.95f, root);
+        }
+        else if (level.worldId == "gardens")
+        {
+            CreateLeafWindLandmark("Gardens_Landmark_WindTree_A", path[1] + new Vector3(-2.2f, 0f, 2.6f), 1.0f, root);
+            CreateLeafWindLandmark("Gardens_Landmark_WindTree_B", path[3] + new Vector3(2.4f, 0f, -2.7f), 1.1f, root);
+            CreateWaterfallLandmark("Gardens_Landmark_Skyfall", path[4] + new Vector3(-2.5f, 0f, 2.7f), 1.0f, root);
+        }
+        else if (level.worldId == "archives")
+        {
+            CreatePaperOrigamiLandmark("Archives_Landmark_OrigamiGate", path[1] + new Vector3(-2.2f, 0f, 2.6f), 1.0f, root);
+            CreatePaperOrigamiLandmark("Archives_Landmark_FoldedStacks", path[3] + new Vector3(2.1f, 0f, -2.6f), 1.1f, root);
+            CreatePrismObeliskLandmark("Archives_Landmark_RunePrism", path[4] + new Vector3(-2.4f, 0f, 2.6f), 0.9f, root);
+        }
+        else if (level.worldId == "forge")
+        {
+            CreateScissorForgeLandmark("Forge_Landmark_Gearmill_A", path[1] + new Vector3(-2.4f, 0f, 2.5f), 1.0f, root);
+            CreateScissorForgeLandmark("Forge_Landmark_Gearmill_B", path[3] + new Vector3(2.2f, 0f, -2.7f), 1.1f, root);
+            CreateStoneArchLandmark("Forge_Landmark_AnvilGate", path[4] + new Vector3(-2.4f, 0f, 2.7f), 0.85f, root);
+        }
+        else if (level.worldId == "fortress")
+        {
+            CreateDarkFortressLandmark("Fortress_Landmark_NoctarTower", path[1] + new Vector3(-2.2f, 0f, 2.6f), 1.1f, root);
+            CreatePrismObeliskLandmark("Fortress_Landmark_PrismChains", path[3] + new Vector3(2.2f, 0f, -2.8f), 1.15f, root);
+            CreateDarkFortressLandmark("Fortress_Landmark_CageKeep", path[4] + new Vector3(-2.3f, 0f, 2.7f), 0.95f, root);
+        }
+    }
+
+    private static void CreateStoneArchLandmark(string prefix, Vector3 position, float scale, Transform parent)
+    {
+        CreateDecorCube(prefix + "_Pillar_A", position + new Vector3(-0.78f * scale, 0.75f * scale, 0f), new Vector3(0.36f * scale, 1.5f * scale, 0.42f * scale), stoneMat, parent);
+        CreateDecorCube(prefix + "_Pillar_B", position + new Vector3(0.78f * scale, 0.75f * scale, 0f), new Vector3(0.36f * scale, 1.5f * scale, 0.42f * scale), stoneMat, parent);
+        CreateDecorCube(prefix + "_Lintel", position + new Vector3(0f, 1.62f * scale, 0f), new Vector3(2.05f * scale, 0.32f * scale, 0.48f * scale), stoneMat, parent);
+        CreateDecorCube(prefix + "_AmberCrack_A", position + new Vector3(-0.8f * scale, 1.06f * scale, -0.24f * scale), new Vector3(0.1f * scale, 0.74f * scale, 0.06f * scale), goldMat, parent).transform.rotation = Quaternion.Euler(0f, 0f, -18f);
+        CreateDecorCube(prefix + "_AmberCrack_B", position + new Vector3(0.68f * scale, 0.92f * scale, -0.24f * scale), new Vector3(0.1f * scale, 0.62f * scale, 0.06f * scale), goldMat, parent).transform.rotation = Quaternion.Euler(0f, 0f, 21f);
+        CreateDecorCube(prefix + "_RuneStone", position + new Vector3(0f, 0.18f * scale, -0.32f * scale), new Vector3(0.72f * scale, 0.22f * scale, 0.12f * scale), prismMat, parent);
+        CreateLandmarkLight(prefix + "_Warm", position + new Vector3(0f, 1.38f * scale, -0.28f * scale), goldMat.color, 4.2f * scale, 1.05f, parent);
+    }
+
+    private static void CreateLeafWindLandmark(string prefix, Vector3 position, float scale, Transform parent)
+    {
+        CreateDecorCylinder(prefix + "_Stem_A", position + new Vector3(-0.3f * scale, 0.68f * scale, 0f), new Vector3(0.09f * scale, 0.68f * scale, 0.09f * scale), leafMat, parent, Quaternion.identity);
+        CreateDecorCylinder(prefix + "_Stem_B", position + new Vector3(0.3f * scale, 0.58f * scale, 0.06f * scale), new Vector3(0.08f * scale, 0.58f * scale, 0.08f * scale), leafMat, parent, Quaternion.identity);
+        CreateDecorCube(prefix + "_Canopy_A", position + new Vector3(-0.28f * scale, 1.32f * scale, 0f), new Vector3(1.45f * scale, 0.14f * scale, 0.5f * scale), leafMat, parent).transform.rotation = Quaternion.Euler(0f, 0f, 10f);
+        CreateDecorCube(prefix + "_Canopy_B", position + new Vector3(0.3f * scale, 1.18f * scale, 0.04f * scale), new Vector3(0.52f * scale, 0.12f * scale, 1.35f * scale), leafMat, parent).transform.rotation = Quaternion.Euler(0f, 26f, -8f);
+        CreateDecorCylinder(prefix + "_WindRing_A", position + new Vector3(0f, 1.52f * scale, -0.18f * scale), new Vector3(0.72f * scale, 0.035f * scale, 0.72f * scale), windMat, parent, Quaternion.Euler(90f, 0f, 0f));
+        CreateDecorCylinder(prefix + "_WindRing_B", position + new Vector3(0f, 1.52f * scale, -0.18f * scale), new Vector3(1.05f * scale, 0.03f * scale, 1.05f * scale), windMat, parent, Quaternion.Euler(90f, 0f, 18f));
+        CreateDecorCube(prefix + "_GoldRibbon", position + new Vector3(0f, 1.05f * scale, -0.42f * scale), new Vector3(1.55f * scale, 0.08f * scale, 0.16f * scale), goldMat, parent).transform.rotation = Quaternion.Euler(0f, 0f, -7f);
+        CreateLandmarkLight(prefix + "_Cyan", position + new Vector3(0f, 1.55f * scale, -0.22f * scale), windMat.color, 4.8f * scale, 0.95f, parent);
+    }
+
+    private static void CreatePaperOrigamiLandmark(string prefix, Vector3 position, float scale, Transform parent)
+    {
+        CreateDecorCube(prefix + "_Spine", position + new Vector3(0f, 0.72f * scale, 0f), new Vector3(0.1f * scale, 1.44f * scale, 0.1f * scale), paperMat, parent);
+        CreateDecorCube(prefix + "_Fold_A", position + new Vector3(-0.38f * scale, 1.08f * scale, 0f), new Vector3(0.82f * scale, 0.06f * scale, 1.06f * scale), paperMat, parent).transform.rotation = Quaternion.Euler(0f, -18f, 27f);
+        CreateDecorCube(prefix + "_Fold_B", position + new Vector3(0.38f * scale, 1.0f * scale, 0f), new Vector3(0.82f * scale, 0.06f * scale, 1.06f * scale), paperMat, parent).transform.rotation = Quaternion.Euler(0f, 18f, -27f);
+        CreateDecorCube(prefix + "_Fold_C", position + new Vector3(0f, 1.52f * scale, 0.02f * scale), new Vector3(1.15f * scale, 0.05f * scale, 0.75f * scale), paperMat, parent).transform.rotation = Quaternion.Euler(0f, 45f, 0f);
+        CreateDecorCube(prefix + "_VioletRune", position + new Vector3(0f, 0.26f * scale, -0.44f * scale), new Vector3(0.72f * scale, 0.08f * scale, 0.22f * scale), prismMat, parent);
+        CreateDecorCube(prefix + "_ArchiveShelf", position + new Vector3(0f, 0.18f * scale, 0.44f * scale), new Vector3(1.5f * scale, 0.36f * scale, 0.18f * scale), darkRockMat, parent);
+        CreateLandmarkLight(prefix + "_Violet", position + new Vector3(0f, 1.38f * scale, -0.36f * scale), prismMat.color, 4.5f * scale, 1.0f, parent);
+    }
+
+    private static void CreateScissorForgeLandmark(string prefix, Vector3 position, float scale, Transform parent)
+    {
+        Vector3 center = position + new Vector3(0f, 1.08f * scale, 0f);
+        CreateDecorCylinder(prefix + "_GearCore", center, new Vector3(0.82f * scale, 0.07f * scale, 0.82f * scale), scissorsMat, parent, Quaternion.Euler(90f, 0f, 0f));
+        for (int i = 0; i < 8; i++)
+        {
+            float angle = i * 45f;
+            float radians = angle * Mathf.Deg2Rad;
+            Vector3 offset = new Vector3(Mathf.Cos(radians), Mathf.Sin(radians), 0f) * 0.86f * scale;
+            GameObject tooth = CreateDecorCube(prefix + "_GearTooth_" + i, center + offset, new Vector3(0.18f * scale, 0.36f * scale, 0.16f * scale), scissorsMat, parent);
+            tooth.transform.rotation = Quaternion.Euler(0f, 0f, angle);
+        }
+
+        CreateDecorCube(prefix + "_Blade_A", position + new Vector3(-0.42f * scale, 0.94f * scale, -0.36f * scale), new Vector3(0.12f * scale, 1.9f * scale, 0.16f * scale), scissorsMat, parent).transform.rotation = Quaternion.Euler(0f, 0f, -31f);
+        CreateDecorCube(prefix + "_Blade_B", position + new Vector3(0.42f * scale, 0.94f * scale, -0.36f * scale), new Vector3(0.12f * scale, 1.9f * scale, 0.16f * scale), scissorsMat, parent).transform.rotation = Quaternion.Euler(0f, 0f, 31f);
+        CreateDecorCube(prefix + "_Spark_A", position + new Vector3(-0.78f * scale, 0.42f * scale, -0.62f * scale), new Vector3(0.36f * scale, 0.08f * scale, 0.08f * scale), dangerMat, parent).transform.rotation = Quaternion.Euler(0f, 0f, 28f);
+        CreateDecorCube(prefix + "_Spark_B", position + new Vector3(0.82f * scale, 0.5f * scale, -0.62f * scale), new Vector3(0.42f * scale, 0.08f * scale, 0.08f * scale), goldMat, parent).transform.rotation = Quaternion.Euler(0f, 0f, -24f);
+        CreateLandmarkLight(prefix + "_Forge", position + new Vector3(0f, 1.2f * scale, -0.45f * scale), dangerMat.color, 4.6f * scale, 1.0f, parent);
+    }
+
+    private static void CreatePrismObeliskLandmark(string prefix, Vector3 position, float scale, Transform parent)
+    {
+        GameObject core = CreateDecorCube(prefix + "_PrismCore", position + new Vector3(0f, 0.9f * scale, 0f), new Vector3(0.58f * scale, 1.42f * scale, 0.58f * scale), prismMat, parent);
+        core.transform.rotation = Quaternion.Euler(0f, 45f, 0f);
+        CreateDecorCube(prefix + "_Shard_A", position + new Vector3(-0.72f * scale, 0.62f * scale, 0.18f * scale), new Vector3(0.26f * scale, 0.86f * scale, 0.26f * scale), crystalMat, parent).transform.rotation = Quaternion.Euler(0f, 20f, 42f);
+        CreateDecorCube(prefix + "_Shard_B", position + new Vector3(0.72f * scale, 0.54f * scale, -0.18f * scale), new Vector3(0.24f * scale, 0.72f * scale, 0.24f * scale), crystalMat, parent).transform.rotation = Quaternion.Euler(0f, -30f, -38f);
+        CreateDecorCube(prefix + "_Shard_C", position + new Vector3(0f, 1.68f * scale, 0f), new Vector3(0.32f * scale, 0.42f * scale, 0.32f * scale), goldMat, parent).transform.rotation = Quaternion.Euler(0f, 45f, 45f);
+        CreateDecorCylinder(prefix + "_Halo", position + new Vector3(0f, 1.15f * scale, 0f), new Vector3(1.16f * scale, 0.035f * scale, 1.16f * scale), crystalMat, parent, Quaternion.Euler(90f, 0f, 0f));
+        CreateLandmarkLight(prefix + "_Prism", position + new Vector3(0f, 1.28f * scale, -0.22f * scale), prismMat.color, 5.2f * scale, 1.15f, parent);
+    }
+
+    private static void CreateWaterfallLandmark(string prefix, Vector3 position, float scale, Transform parent)
+    {
+        CreateDecorCube(prefix + "_StoneLip", position + new Vector3(0f, 0.26f * scale, 0f), new Vector3(1.6f * scale, 0.26f * scale, 0.42f * scale), darkRockMat, parent);
+        CreateDecorCube(prefix + "_Ribbon_A", position + new Vector3(-0.42f * scale, 0.88f * scale, 0.12f * scale), new Vector3(0.18f * scale, 1.36f * scale, 0.08f * scale), windMat, parent);
+        CreateDecorCube(prefix + "_Ribbon_B", position + new Vector3(0f, 0.76f * scale, 0.12f * scale), new Vector3(0.2f * scale, 1.12f * scale, 0.08f * scale), crystalMat, parent);
+        CreateDecorCube(prefix + "_Ribbon_C", position + new Vector3(0.42f * scale, 0.88f * scale, 0.12f * scale), new Vector3(0.18f * scale, 1.36f * scale, 0.08f * scale), windMat, parent);
+        CreateDecorCylinder(prefix + "_Foam_A", position + new Vector3(-0.32f * scale, 0.2f * scale, 0.32f * scale), new Vector3(0.38f * scale, 0.035f * scale, 0.38f * scale), crystalMat, parent, Quaternion.identity);
+        CreateDecorCylinder(prefix + "_Foam_B", position + new Vector3(0.42f * scale, 0.18f * scale, 0.3f * scale), new Vector3(0.3f * scale, 0.03f * scale, 0.3f * scale), windMat, parent, Quaternion.identity);
+        CreateLandmarkLight(prefix + "_Water", position + new Vector3(0f, 1.18f * scale, 0.2f * scale), crystalMat.color, 4.8f * scale, 0.95f, parent);
+    }
+
+    private static void CreateDarkFortressLandmark(string prefix, Vector3 position, float scale, Transform parent)
+    {
+        CreateDecorCube(prefix + "_Tower", position + new Vector3(0f, 1.08f * scale, 0f), new Vector3(0.8f * scale, 2.16f * scale, 0.8f * scale), darkRockMat, parent);
+        CreateDecorCube(prefix + "_Crown_A", position + new Vector3(-0.36f * scale, 2.34f * scale, 0f), new Vector3(0.18f * scale, 0.48f * scale, 0.18f * scale), prismMat, parent).transform.rotation = Quaternion.Euler(0f, 0f, -18f);
+        CreateDecorCube(prefix + "_Crown_B", position + new Vector3(0.36f * scale, 2.34f * scale, 0f), new Vector3(0.18f * scale, 0.48f * scale, 0.18f * scale), prismMat, parent).transform.rotation = Quaternion.Euler(0f, 0f, 18f);
+        CreateDecorCube(prefix + "_Chain_A", position + new Vector3(-0.86f * scale, 1.34f * scale, -0.2f * scale), new Vector3(0.08f * scale, 1.42f * scale, 0.08f * scale), crystalMat, parent).transform.rotation = Quaternion.Euler(0f, 0f, -25f);
+        CreateDecorCube(prefix + "_Chain_B", position + new Vector3(0.86f * scale, 1.34f * scale, -0.2f * scale), new Vector3(0.08f * scale, 1.42f * scale, 0.08f * scale), crystalMat, parent).transform.rotation = Quaternion.Euler(0f, 0f, 25f);
+        CreateDecorCube(prefix + "_PrismEye", position + new Vector3(0f, 1.62f * scale, -0.44f * scale), new Vector3(0.36f * scale, 0.36f * scale, 0.12f * scale), prismMat, parent).transform.rotation = Quaternion.Euler(0f, 45f, 45f);
+        CreateDecorCube(prefix + "_Spire_A", position + new Vector3(-0.7f * scale, 0.82f * scale, 0.42f * scale), new Vector3(0.22f * scale, 1.64f * scale, 0.22f * scale), darkRockMat, parent);
+        CreateDecorCube(prefix + "_Spire_B", position + new Vector3(0.7f * scale, 0.82f * scale, 0.42f * scale), new Vector3(0.22f * scale, 1.64f * scale, 0.22f * scale), darkRockMat, parent);
+        CreateLandmarkLight(prefix + "_Noctar", position + new Vector3(0f, 1.82f * scale, -0.34f * scale), prismMat.color, 5.0f * scale, 1.25f, parent);
+    }
+
+    private static void CreateLandmarkLight(string name, Vector3 position, Color color, float range, float intensity, Transform parent)
+    {
+        Light light = new GameObject(name + "_Landmark_Light").AddComponent<Light>();
+        light.transform.SetParent(parent, false);
+        light.transform.position = position;
+        light.type = LightType.Point;
+        light.color = color;
+        light.range = range;
+        light.intensity = intensity;
     }
 
     private static void CreateAdventureMechanics(MorphoriaLevelInfo level, Transform obstacles, Transform environment)
@@ -1253,7 +1406,7 @@ public static class MorphoriaSceneBuilder
 
         if (material.HasProperty("_Mode"))
         {
-            material.SetFloat("_Mode", transparent ? 3f : 0f);
+            material.SetFloat("_Mode", transparent ? 2f : 0f);
         }
 
         if (transparent)

@@ -479,6 +479,7 @@ public static class MorphoriaProductionValidator
         ValidatePlayerControllerFeel(sceneName, issues);
         ValidatePlayerInventory(sceneName, issues);
         ValidateRouteLanguage(sceneName, issues);
+        ValidateWorldLandmarks(sceneName, issues);
         if (level.targetVillagers > 0)
         {
             RequireOne<MiniBoss>(sceneName, issues);
@@ -695,6 +696,48 @@ public static class MorphoriaProductionValidator
         if (routeRails < 10)
         {
             issues.Add(sceneName + ": playable level needs at least ten route rail strips.");
+        }
+    }
+
+    private static void ValidateWorldLandmarks(string sceneName, List<string> issues)
+    {
+        Transform[] transforms = UnityEngine.Object.FindObjectsByType<Transform>(FindObjectsInactive.Include);
+        int landmarkGroups = 0;
+        int landmarkPieces = 0;
+        int landmarkLights = 0;
+
+        for (int i = 0; i < transforms.Length; i++)
+        {
+            string name = transforms[i].name;
+            if (name.StartsWith("WorldLandmarks_", StringComparison.Ordinal))
+            {
+                landmarkGroups++;
+            }
+
+            if (name.Contains("_Landmark_"))
+            {
+                landmarkPieces++;
+            }
+
+            if (name.Contains("_Landmark_") && name.EndsWith("_Light", StringComparison.Ordinal))
+            {
+                landmarkLights++;
+            }
+        }
+
+        if (landmarkGroups < 1)
+        {
+            issues.Add(sceneName + ": playable level needs a WorldLandmarks group to preserve visual-card identity.");
+        }
+
+        if (landmarkPieces < 18)
+        {
+            issues.Add(sceneName + ": playable level needs at least eighteen landmark pieces for readable world silhouettes.");
+        }
+
+        if (landmarkLights < 2)
+        {
+            issues.Add(sceneName + ": playable level needs at least two lit landmarks for premium magical readability.");
         }
     }
 
