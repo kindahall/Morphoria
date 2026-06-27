@@ -64,6 +64,11 @@ namespace Morphoria
 
             GUILayout.BeginArea(new Rect(panel.x + 34f, panel.yMax - 78f, panel.width - 68f, 46f));
             GUILayout.BeginHorizontal();
+            if (result.campaignComplete && GUILayout.Button("Finale", buttonStyle, GUILayout.Height(42f)))
+            {
+                LoadFinale();
+            }
+
             if (!string.IsNullOrEmpty(result.nextLevelId) && GUILayout.Button("Suite", buttonStyle, GUILayout.Height(42f)))
             {
                 LoadNextLevel();
@@ -114,6 +119,13 @@ namespace Morphoria
             showing = false;
             Time.timeScale = 1f;
             MorphoriaGameSession.GetOrCreate().LoadWorldMap();
+        }
+
+        private void LoadFinale()
+        {
+            showing = false;
+            Time.timeScale = 1f;
+            MorphoriaGameSession.GetOrCreate().LoadFinale();
         }
 
         private void LoadNextLevel()

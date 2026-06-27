@@ -86,12 +86,12 @@ public static class MorphoriaProductionValidator
             if (next != null)
             {
                 MorphoriaLevelProgress nextProgress = MorphoriaSaveSystem.GetProgress(data, next.id);
-                if (!result.unlockedNextLevel || !nextProgress.unlocked || result.nextLevelId != next.id || result.nextLevelName != next.displayName)
+                if (!result.unlockedNextLevel || result.campaignComplete || !nextProgress.unlocked || result.nextLevelId != next.id || result.nextLevelName != next.displayName)
                 {
                     issues.Add("Campaign clear did not unlock next level after " + level.id + ".");
                 }
             }
-            else if (!data.finalBossDefeated || result.unlockedNextLevel || result.nextLevelId != string.Empty || result.nextLevelName != string.Empty)
+            else if (!data.finalBossDefeated || !result.campaignComplete || result.unlockedNextLevel || result.nextLevelId != string.Empty || result.nextLevelName != string.Empty)
             {
                 issues.Add("Final campaign clear did not mark Noctar defeated correctly.");
             }
@@ -117,7 +117,8 @@ public static class MorphoriaProductionValidator
         {
             ScenePath(MorphoriaGameContent.MainMenuScene),
             ScenePath(MorphoriaGameContent.HubScene),
-            ScenePath(MorphoriaGameContent.WorldMapScene)
+            ScenePath(MorphoriaGameContent.WorldMapScene),
+            ScenePath(MorphoriaGameContent.FinaleScene)
         };
 
         for (int i = 0; i < MorphoriaGameContent.Levels.Length; i++)
@@ -208,12 +209,17 @@ public static class MorphoriaProductionValidator
             RequireOne<MorphoriaMenuScreen>(sceneName, issues);
             ValidateMainMenuCharacters(sceneName, issues);
         }
-        else if (sceneName == MorphoriaGameContent.WorldMapScene)
-        {
-            RequireOne<MorphoriaWorldMapScreen>(sceneName, issues);
-        }
-        else if (sceneName == MorphoriaGameContent.HubScene)
-        {
+            else if (sceneName == MorphoriaGameContent.WorldMapScene)
+            {
+                RequireOne<MorphoriaWorldMapScreen>(sceneName, issues);
+            }
+            else if (sceneName == MorphoriaGameContent.FinaleScene)
+            {
+                RequireOne<MorphoriaFinaleScreen>(sceneName, issues);
+                ValidateFinaleCharacters(sceneName, issues);
+            }
+            else if (sceneName == MorphoriaGameContent.HubScene)
+            {
             RequireOne<MorphoriaPlayer>(sceneName, issues);
             RequireOne<MorphoriaProceduralAnimator>(sceneName, issues);
             RequireOne<ThirdPersonCamera>(sceneName, issues);
@@ -261,6 +267,36 @@ public static class MorphoriaProductionValidator
             if (actualPath != prefabPath)
             {
                 issues.Add(sceneName + ": menu character " + objectName + " is not linked to " + prefabPath + ".");
+            }
+        }
+    }
+
+    private static void ValidateFinaleCharacters(string sceneName, List<string> issues)
+    {
+        string[,] expected =
+        {
+            { "Finale_Rokko_Character", "Assets/Morphoria/Prefabs/Characters/PF_Rokko.prefab" },
+            { "Finale_Luma_Character", "Assets/Morphoria/Prefabs/Characters/PF_Luma.prefab" },
+            { "Finale_Papyra_Character", "Assets/Morphoria/Prefabs/Characters/PF_Papyra.prefab" },
+            { "Finale_Cizo_Character", "Assets/Morphoria/Prefabs/Characters/PF_Cizo.prefab" },
+            { "Finale_Noctar_Redeemed", "Assets/Morphoria/Prefabs/Characters/PF_Noctar.prefab" }
+        };
+
+        for (int i = 0; i < expected.GetLength(0); i++)
+        {
+            string objectName = expected[i, 0];
+            string prefabPath = expected[i, 1];
+            GameObject visual = GameObject.Find(objectName);
+            if (visual == null)
+            {
+                issues.Add(sceneName + ": missing finale character " + objectName + ".");
+                continue;
+            }
+
+            string actualPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(visual);
+            if (actualPath != prefabPath)
+            {
+                issues.Add(sceneName + ": finale character " + objectName + " is not linked to " + prefabPath + ".");
             }
         }
     }

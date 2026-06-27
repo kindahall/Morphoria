@@ -13,6 +13,7 @@ public static class MorphoriaSceneBuilder
     private const string MainMenuPath = "Assets/Morphoria/Scenes/MainMenu.unity";
     private const string HubPath = "Assets/Morphoria/Scenes/VillageEcloriaHub.unity";
     private const string WorldMapPath = "Assets/Morphoria/Scenes/WorldMap.unity";
+    private const string FinalePath = "Assets/Morphoria/Scenes/FinaleMorphoria.unity";
     private const string ScenePath = "Assets/Morphoria/Scenes/LePontDesQuatreFormes.unity";
     private const string MaterialFolder = "Assets/Morphoria/Materials";
 
@@ -181,6 +182,7 @@ public static class MorphoriaSceneBuilder
         BuildMainMenuScene();
         BuildHubScene();
         BuildWorldMapScene();
+        BuildFinaleScene();
         BuildVerticalSliceScene(false);
 
         for (int i = 1; i < MorphoriaGameContent.Levels.Length; i++)
@@ -308,6 +310,43 @@ public static class MorphoriaSceneBuilder
         EditorSceneManager.SaveScene(scene, WorldMapPath);
     }
 
+    private static void BuildFinaleScene()
+    {
+        Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        scene.name = MorphoriaGameContent.FinaleScene;
+        ConfigureRenderSettings(new Color(0.42f, 0.68f, 0.86f), new Color(0.5f, 0.78f, 0.92f), 0.007f);
+        CreateLighting();
+        CreateFeedbackSystem();
+        CreateShellCamera("FinaleCamera", new Vector3(0f, 4.8f, -10.5f), new Vector3(0f, 1.45f, 0.4f), new Color(0.07f, 0.1f, 0.16f), 48f);
+
+        Transform root = new GameObject("Morphoria_Finale_Set").transform;
+        CreateIsland("Finale_Ecloria_Reunited", new Vector3(0f, -0.35f, 0f), new Vector3(12f, 1f, 7.5f), neutralMat, root);
+        CreateCube("Finale_Prism_Healed", new Vector3(0f, 1.3f, 0.55f), new Vector3(1.15f, 2.25f, 1.15f), crystalMat, root).transform.rotation = Quaternion.Euler(0f, 35f, 45f);
+        CreateCylinder("Finale_Light_Ring", new Vector3(0f, 1.9f, 0.55f), new Vector3(3.2f, 0.08f, 3.2f), crystalMat, root, Quaternion.Euler(90f, 0f, 0f));
+
+        CreateFormStatue("Finale_Rokko", new Vector3(-4.2f, 0.45f, -0.4f), stoneMat, "PF_Rokko", root);
+        CreateFormStatue("Finale_Luma", new Vector3(-2.0f, 0.45f, 1.75f), leafMat, "PF_Luma", root);
+        CreateFormStatue("Finale_Papyra", new Vector3(2.0f, 0.45f, 1.75f), paperMat, "PF_Papyra", root);
+        CreateFormStatue("Finale_Cizo", new Vector3(4.2f, 0.45f, -0.4f), scissorsMat, "PF_Cizo", root);
+
+        GameObject noctar = InstantiateCharacterPrefab("PF_Noctar", root);
+        if (noctar != null)
+        {
+            noctar.name = "Finale_Noctar_Redeemed";
+            noctar.transform.localPosition = new Vector3(0f, 0.05f, -2.35f);
+            noctar.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
+            noctar.transform.localScale = new Vector3(0.78f, 0.78f, 0.78f);
+            DestroyCollidersImmediate(noctar);
+        }
+
+        CreateTitleText("Morphoria", new Vector3(0f, 3.6f, 0.35f), 0.62f, crystalMat.color, root);
+        CreateDecor(root);
+
+        GameObject controller = new GameObject("Finale_Controller");
+        controller.AddComponent<MorphoriaFinaleScreen>();
+        EditorSceneManager.SaveScene(scene, FinalePath);
+    }
+
     private static void BuildAdventureLevelScene(MorphoriaLevelInfo level)
     {
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -404,6 +443,7 @@ public static class MorphoriaSceneBuilder
             new EditorBuildSettingsScene(MainMenuPath, true),
             new EditorBuildSettingsScene(HubPath, true),
             new EditorBuildSettingsScene(WorldMapPath, true),
+            new EditorBuildSettingsScene(FinalePath, true),
             new EditorBuildSettingsScene(ScenePath, true)
         };
 

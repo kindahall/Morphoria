@@ -31,6 +31,7 @@ namespace Morphoria
         public const string MainMenuScene = "MainMenu";
         public const string HubScene = "VillageEcloriaHub";
         public const string WorldMapScene = "WorldMap";
+        public const string FinaleScene = "FinaleMorphoria";
         public const string LevelOneScene = "LePontDesQuatreFormes";
 
         public static readonly MorphoriaWorldInfo[] Worlds =
@@ -131,6 +132,7 @@ namespace Morphoria
         public bool firstClear;
         public bool newBest;
         public bool unlockedNextLevel;
+        public bool campaignComplete;
         public int goldenStars;
         public int targetGoldenStars;
         public int prismStars;
@@ -203,6 +205,7 @@ namespace Morphoria
                 firstClear = firstClear,
                 newBest = newBest,
                 unlockedNextLevel = unlockedNext,
+                campaignComplete = next == null,
                 goldenStars = goldenStars,
                 targetGoldenStars = level.targetGoldenStars,
                 prismStars = prismStars,

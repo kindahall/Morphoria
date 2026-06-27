@@ -93,6 +93,17 @@ namespace Morphoria
             LoadScene(MorphoriaGameContent.WorldMapScene);
         }
 
+        public void LoadFinale()
+        {
+            if (SaveData != null)
+            {
+                SaveData.lastScene = MorphoriaGameContent.FinaleScene;
+                Save();
+            }
+
+            LoadScene(MorphoriaGameContent.FinaleScene);
+        }
+
         public void LoadMainMenu()
         {
             LoadScene(MorphoriaGameContent.MainMenuScene);
