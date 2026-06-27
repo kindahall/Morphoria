@@ -16,12 +16,14 @@ namespace Morphoria
         public int PrismStars { get; private set; }
         public int PrismObjectivesCollected => ChoiceStarsCollected + PrismStars;
         public int VillagersSaved { get; private set; }
+        public int MaxHearts => Mathf.Max(1, startingHearts);
+        public bool IsDepleted => Hearts <= 0;
 
         public event Action Changed;
 
         private void Awake()
         {
-            Hearts = startingHearts;
+            Hearts = MaxHearts;
             ChoiceStars = startingChoiceStars;
         }
 
@@ -63,9 +65,21 @@ namespace Morphoria
             Changed?.Invoke();
         }
 
-        public void Damage(int amount)
+        public bool Damage(int amount)
         {
+            if (amount <= 0)
+            {
+                return IsDepleted;
+            }
+
             Hearts = Mathf.Max(0, Hearts - amount);
+            Changed?.Invoke();
+            return IsDepleted;
+        }
+
+        public void RestoreHearts()
+        {
+            Hearts = MaxHearts;
             Changed?.Invoke();
         }
     }

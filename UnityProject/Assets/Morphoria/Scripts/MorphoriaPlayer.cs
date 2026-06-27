@@ -33,6 +33,7 @@ namespace Morphoria
         private float forcedFormTimer;
         private string interactionPrompt = string.Empty;
         private bool interactionPromptReady;
+        private bool knockoutLocked;
 
         public event Action<MorphoriaForm> FormChanged;
 
@@ -44,6 +45,7 @@ namespace Morphoria
         public float PlanarSpeed => currentHorizontalVelocity.magnitude;
         public bool IsGrounded => controller != null && controller.isGrounded;
         public bool IsGliding { get; private set; }
+        public bool IsKnockedOut => knockoutLocked;
         public float ForcedFormTimer => Mathf.Max(0f, forcedFormTimer);
         public string FeedbackText => Time.time - lastFeedbackTime < 2.25f ? feedbackText : string.Empty;
         public string InteractionPrompt => interactionPrompt;
@@ -67,6 +69,15 @@ namespace Morphoria
 
         private void Update()
         {
+            if (knockoutLocked)
+            {
+                currentHorizontalVelocity = Vector3.zero;
+                externalVelocity = Vector3.zero;
+                verticalVelocity = 0f;
+                IsGliding = false;
+                return;
+            }
+
             if (forcedFormTimer > 0f)
             {
                 forcedFormTimer = Mathf.Max(0f, forcedFormTimer - Time.deltaTime);
@@ -221,7 +232,60 @@ namespace Morphoria
 
         public void Respawn()
         {
+            bool depleted = ApplyDamage(1, "Retour au checkpoint", Vector3.zero);
+            if (depleted)
+            {
+                return;
+            }
+
+            MoveToCheckpoint();
+        }
+
+        public bool ApplyDamage(int amount, string feedback, Vector3 knockback)
+        {
+            if (knockoutLocked || inventory == null)
+            {
+                return true;
+            }
+
+            if (amount <= 0)
+            {
+                return inventory.IsDepleted;
+            }
+
             MorphoriaFeedbackSystem.GetOrCreate().Play(MorphoriaFeedbackCue.Damage, transform.position + Vector3.up, Color.red, 0.75f);
+            if (knockback.sqrMagnitude > 0.01f)
+            {
+                AddExternalVelocity(knockback);
+            }
+
+            if (!string.IsNullOrEmpty(feedback))
+            {
+                ShowFeedback(feedback);
+            }
+
+            bool depleted = inventory.Damage(amount);
+            if (depleted)
+            {
+                TriggerKnockout();
+            }
+
+            return depleted;
+        }
+
+        public void RecoverAtCheckpoint()
+        {
+            knockoutLocked = false;
+            forcedFormTimer = 0f;
+            wheelOpen = false;
+            Time.timeScale = 1f;
+            inventory.RestoreHearts();
+            MoveToCheckpoint();
+            ShowFeedback("Checkpoint");
+        }
+
+        private void MoveToCheckpoint()
+        {
             controller.enabled = false;
             transform.SetPositionAndRotation(checkpointPosition, checkpointRotation);
             verticalVelocity = 0f;
@@ -229,8 +293,24 @@ namespace Morphoria
             externalVelocity = Vector3.zero;
             IsGliding = false;
             controller.enabled = true;
-            inventory.Damage(1);
-            ShowFeedback("Retour au checkpoint");
+        }
+
+        private void TriggerKnockout()
+        {
+            knockoutLocked = true;
+            currentHorizontalVelocity = Vector3.zero;
+            externalVelocity = Vector3.zero;
+            verticalVelocity = 0f;
+            IsGliding = false;
+            wheelOpen = false;
+
+            MorphoriaGameOverScreen screen = FindAnyObjectByType<MorphoriaGameOverScreen>();
+            if (screen == null)
+            {
+                screen = new GameObject("Game_Over_Screen").AddComponent<MorphoriaGameOverScreen>();
+            }
+
+            screen.Show(this);
         }
 
         public void ShowFeedback(string text)

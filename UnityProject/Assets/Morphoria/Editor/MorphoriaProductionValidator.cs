@@ -209,24 +209,27 @@ public static class MorphoriaProductionValidator
             RequireOne<MorphoriaMenuScreen>(sceneName, issues);
             ValidateMainMenuCharacters(sceneName, issues);
         }
-            else if (sceneName == MorphoriaGameContent.WorldMapScene)
-            {
-                RequireOne<MorphoriaWorldMapScreen>(sceneName, issues);
-            }
-            else if (sceneName == MorphoriaGameContent.FinaleScene)
-            {
-                RequireOne<MorphoriaFinaleScreen>(sceneName, issues);
-                ValidateFinaleCharacters(sceneName, issues);
-            }
-            else if (sceneName == MorphoriaGameContent.HubScene)
-            {
+        else if (sceneName == MorphoriaGameContent.WorldMapScene)
+        {
+            RequireOne<MorphoriaWorldMapScreen>(sceneName, issues);
+        }
+        else if (sceneName == MorphoriaGameContent.FinaleScene)
+        {
+            RequireOne<MorphoriaFinaleScreen>(sceneName, issues);
+            ValidateFinaleCharacters(sceneName, issues);
+        }
+        else if (sceneName == MorphoriaGameContent.HubScene)
+        {
             RequireOne<MorphoriaPlayer>(sceneName, issues);
+            RequireOne<PlayerInventory>(sceneName, issues);
             RequireOne<MorphoriaProceduralAnimator>(sceneName, issues);
             RequireOne<ThirdPersonCamera>(sceneName, issues);
             ValidateThirdPersonCamera(sceneName, issues);
             RequireOne<MorphoriaHud>(sceneName, issues);
+            RequireOne<MorphoriaGameOverScreen>(sceneName, issues);
             RequireOne<MorphoriaHubState>(sceneName, issues);
             RequireAtLeast<MorphoriaScenePortal>(sceneName, 2, issues);
+            ValidatePlayerInventory(sceneName, issues);
             MorphoriaHud[] hubHuds = UnityEngine.Object.FindObjectsByType<MorphoriaHud>(FindObjectsInactive.Include);
             if (hubHuds.Length == 1 && hubHuds[0].showLevelGoals)
             {
@@ -311,16 +314,19 @@ public static class MorphoriaProductionValidator
         }
 
         RequireOne<MorphoriaPlayer>(sceneName, issues);
+        RequireOne<PlayerInventory>(sceneName, issues);
         RequireOne<MorphoriaProceduralAnimator>(sceneName, issues);
         RequireOne<ThirdPersonCamera>(sceneName, issues);
         ValidateThirdPersonCamera(sceneName, issues);
         RequireOne<MorphoriaHud>(sceneName, issues);
         RequireOne<MorphoriaPauseMenu>(sceneName, issues);
+        RequireOne<MorphoriaGameOverScreen>(sceneName, issues);
         RequireOne<MorphoriaLevelResultScreen>(sceneName, issues);
         RequireOne<LevelExit>(sceneName, issues);
         RequireAtLeast<Checkpoint>(sceneName, 1, issues);
         RequireAtLeast<MorphoriaEnemy>(sceneName, 2, issues);
         RequireAtLeast<MorphoriaCollectible>(sceneName, 8, issues);
+        ValidatePlayerInventory(sceneName, issues);
         if (level.targetVillagers > 0)
         {
             RequireOne<MiniBoss>(sceneName, issues);
@@ -381,6 +387,26 @@ public static class MorphoriaProductionValidator
             {
                 issues.Add(sceneName + ": exit requires " + exits[i].requiredVillagers + " villagers but scene has " + cages.Length + " cage(s).");
             }
+        }
+    }
+
+    private static void ValidatePlayerInventory(string sceneName, List<string> issues)
+    {
+        PlayerInventory[] inventories = UnityEngine.Object.FindObjectsByType<PlayerInventory>(FindObjectsInactive.Include);
+        if (inventories.Length != 1)
+        {
+            return;
+        }
+
+        PlayerInventory inventory = inventories[0];
+        if (inventory.startingHearts < 3)
+        {
+            issues.Add(sceneName + ": player should start with at least three hearts.");
+        }
+
+        if (inventory.startingChoiceStars < 1)
+        {
+            issues.Add(sceneName + ": player should start with choice stars for form switching.");
         }
     }
 

@@ -84,6 +84,7 @@ public static class MorphoriaSceneBuilder
         ConfigureHudForLevel(hud, MorphoriaGameContent.Levels[0]);
         CreatePauseMenu();
         CreateLevelResultScreen();
+        CreateGameOverScreen();
 
         Vector3[] path =
         {
@@ -241,6 +242,7 @@ public static class MorphoriaSceneBuilder
         hud.objective = "Choisissez une destination";
         hud.showLevelGoals = false;
         CreatePauseMenu();
+        CreateGameOverScreen();
         new GameObject("Hub_State").AddComponent<MorphoriaHubState>();
 
         CreateIsland("Hub_Place_Centrale", new Vector3(0f, 0f, 0f), new Vector3(15f, 1f, 12f), neutralMat, village);
@@ -377,6 +379,7 @@ public static class MorphoriaSceneBuilder
         ConfigureHudForLevel(hud, level);
         CreatePauseMenu();
         CreateLevelResultScreen();
+        CreateGameOverScreen();
 
         Material primary = GetPrimaryMaterial(level);
         Material secondary = GetSecondaryMaterial(level);
@@ -805,6 +808,11 @@ public static class MorphoriaSceneBuilder
     private static void CreateLevelResultScreen()
     {
         new GameObject("Level_Result_Screen").AddComponent<MorphoriaLevelResultScreen>();
+    }
+
+    private static void CreateGameOverScreen()
+    {
+        new GameObject("Game_Over_Screen").AddComponent<MorphoriaGameOverScreen>();
     }
 
     private static void CreateScenePortal(string name, Vector3 position, string label, string targetScene, string targetLevelId, Transform parent)

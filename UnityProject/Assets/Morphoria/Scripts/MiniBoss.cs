@@ -100,10 +100,7 @@ namespace Morphoria
                 return;
             }
 
-            player.Inventory.Damage(1);
-            player.AddExternalVelocity((player.transform.position - transform.position).normalized * 8f + Vector3.up * 4f);
-            player.ShowFeedback("Garde-Cage");
-            MorphoriaFeedbackSystem.GetOrCreate().Play(MorphoriaFeedbackCue.Damage, player.transform.position + Vector3.up, Color.red, 0.72f);
+            player.ApplyDamage(1, "Garde-Cage", (player.transform.position - transform.position).normalized * 8f + Vector3.up * 4f);
             attackCooldown = 1.4f;
         }
 

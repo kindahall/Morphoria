@@ -109,10 +109,7 @@ namespace Morphoria
                 return;
             }
 
-            target.Inventory.Damage(1);
-            target.AddExternalVelocity(delta.normalized * 7f + Vector3.up * 3f);
-            target.ShowFeedback(displayName);
-            MorphoriaFeedbackSystem.GetOrCreate().Play(MorphoriaFeedbackCue.Damage, target.transform.position + Vector3.up, Color.red, 0.62f);
+            target.ApplyDamage(1, displayName, delta.normalized * 7f + Vector3.up * 3f);
             damageCooldown = 1.25f;
         }
 
