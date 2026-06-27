@@ -19,6 +19,7 @@ public static class MorphoriaProductionValidator
 
         ValidateBuildSettings(expectedScenePaths, issues);
         ValidateVisualReferences(issues);
+        ValidateCharacterPrefabs(issues);
 
         for (int i = 0; i < expectedScenePaths.Count; i++)
         {
@@ -306,6 +307,41 @@ public static class MorphoriaProductionValidator
         if (conceptCount < 9)
         {
             issues.Add("Expected at least 9 Unity concept references, found " + conceptCount + ".");
+        }
+    }
+
+    private static void ValidateCharacterPrefabs(List<string> issues)
+    {
+        string[] prefabPaths =
+        {
+            "Assets/Morphoria/Prefabs/Characters/PF_Rokko.prefab",
+            "Assets/Morphoria/Prefabs/Characters/PF_Luma.prefab",
+            "Assets/Morphoria/Prefabs/Characters/PF_Papyra.prefab",
+            "Assets/Morphoria/Prefabs/Characters/PF_Cizo.prefab",
+            "Assets/Morphoria/Prefabs/Characters/PF_Noctar.prefab"
+        };
+
+        for (int i = 0; i < prefabPaths.Length; i++)
+        {
+            string path = prefabPaths[i];
+            if (!File.Exists(path))
+            {
+                issues.Add("Missing character prefab: " + path);
+                continue;
+            }
+
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (prefab == null)
+            {
+                issues.Add("Character prefab cannot be loaded: " + path);
+                continue;
+            }
+
+            Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>(true);
+            if (renderers.Length < 5)
+            {
+                issues.Add("Character prefab has too few renderers: " + path + " (" + renderers.Length + ").");
+            }
         }
     }
 

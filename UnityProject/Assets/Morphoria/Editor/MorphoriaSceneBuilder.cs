@@ -175,6 +175,7 @@ public static class MorphoriaSceneBuilder
         EnsureFolders();
         CreateMaterials();
         MorphoriaReferenceImporter.SyncReferences();
+        MorphoriaPrefabBuilder.BuildCharacterPrefabs();
 
         BuildMainMenuScene();
         BuildHubScene();
