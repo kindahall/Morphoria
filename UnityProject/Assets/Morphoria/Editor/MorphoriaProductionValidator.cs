@@ -18,6 +18,7 @@ public static class MorphoriaProductionValidator
         List<string> expectedScenePaths = ExpectedScenePaths();
 
         ValidateBuildSettings(expectedScenePaths, issues);
+        ValidateVisualReferences(issues);
 
         for (int i = 0; i < expectedScenePaths.Count; i++)
         {
@@ -142,6 +143,11 @@ public static class MorphoriaProductionValidator
             RequireOne<MorphoriaHud>(sceneName, issues);
             RequireOne<MorphoriaHubState>(sceneName, issues);
             RequireAtLeast<MorphoriaScenePortal>(sceneName, 2, issues);
+            MorphoriaHud[] hubHuds = UnityEngine.Object.FindObjectsByType<MorphoriaHud>(FindObjectsInactive.Include);
+            if (hubHuds.Length == 1 && hubHuds[0].showLevelGoals)
+            {
+                issues.Add(sceneName + ": hub HUD should not show level goal counters.");
+            }
         }
         else
         {
@@ -153,6 +159,13 @@ public static class MorphoriaProductionValidator
 
     private static void ValidatePlayableLevel(string sceneName, List<string> issues)
     {
+        MorphoriaLevelInfo level = MorphoriaGameContent.GetLevelByScene(sceneName);
+        if (level == null)
+        {
+            issues.Add(sceneName + ": no MorphoriaLevelInfo found for scene.");
+            return;
+        }
+
         RequireOne<MorphoriaPlayer>(sceneName, issues);
         RequireOne<ThirdPersonCamera>(sceneName, issues);
         RequireOne<MorphoriaHud>(sceneName, issues);
@@ -162,12 +175,88 @@ public static class MorphoriaProductionValidator
 
         LevelExit[] exits = UnityEngine.Object.FindObjectsByType<LevelExit>(FindObjectsInactive.Include);
         VillagerCage[] cages = UnityEngine.Object.FindObjectsByType<VillagerCage>(FindObjectsInactive.Include);
+        MorphoriaCollectible[] collectibles = UnityEngine.Object.FindObjectsByType<MorphoriaCollectible>(FindObjectsInactive.Include);
+        MorphoriaHud[] huds = UnityEngine.Object.FindObjectsByType<MorphoriaHud>(FindObjectsInactive.Include);
+
+        int goldenStars = 0;
+        int prismStars = 0;
+        for (int i = 0; i < collectibles.Length; i++)
+        {
+            if (collectibles[i].kind == CollectibleKind.GoldenStar)
+            {
+                goldenStars += Mathf.Max(0, collectibles[i].amount);
+            }
+            else if (collectibles[i].kind == CollectibleKind.ChoiceStar || collectibles[i].kind == CollectibleKind.PrismStar)
+            {
+                prismStars += Mathf.Max(0, collectibles[i].amount);
+            }
+        }
+
+        if (goldenStars != level.targetGoldenStars)
+        {
+            issues.Add(sceneName + ": expected " + level.targetGoldenStars + " golden stars, found " + goldenStars + ".");
+        }
+
+        if (prismStars != level.targetPrismStars)
+        {
+            issues.Add(sceneName + ": expected " + level.targetPrismStars + " prism stars, found " + prismStars + ".");
+        }
+
+        if (cages.Length != level.targetVillagers)
+        {
+            issues.Add(sceneName + ": expected " + level.targetVillagers + " villager cage(s), found " + cages.Length + ".");
+        }
+
+        if (huds.Length == 1)
+        {
+            MorphoriaHud hud = huds[0];
+            if (!hud.showLevelGoals)
+            {
+                issues.Add(sceneName + ": level HUD must show level goal counters.");
+            }
+
+            if (hud.targetGoldenStars != level.targetGoldenStars || hud.targetPrismStars != level.targetPrismStars || hud.targetVillagers != level.targetVillagers)
+            {
+                issues.Add(sceneName + ": HUD targets do not match MorphoriaLevelInfo.");
+            }
+        }
+
         for (int i = 0; i < exits.Length; i++)
         {
             if (exits[i].requiredVillagers > cages.Length)
             {
                 issues.Add(sceneName + ": exit requires " + exits[i].requiredVillagers + " villagers but scene has " + cages.Length + " cage(s).");
             }
+        }
+    }
+
+    private static void ValidateVisualReferences(List<string> issues)
+    {
+        string[] visualCards =
+        {
+            "01_histoire_point_de_depart.png",
+            "02_carte_du_monde_lumeria.png",
+            "03_village_ecloria_evolution.png",
+            "04_carte_premier_niveau_pont_quatre_formes.png",
+            "05_obstacles_interactions_formes.png",
+            "06_ennemis_faiblesses.png",
+            "07_interface_hud_roue_des_formes.png"
+        };
+
+        for (int i = 0; i < visualCards.Length; i++)
+        {
+            string path = "Assets/Morphoria/Art/References/visual_cards/" + visualCards[i];
+            if (!File.Exists(path))
+            {
+                issues.Add("Missing Unity visual reference: " + path);
+            }
+        }
+
+        string conceptFolder = "Assets/Morphoria/Art/References/concept_cards";
+        int conceptCount = Directory.Exists(conceptFolder) ? Directory.GetFiles(conceptFolder, "*.png", SearchOption.TopDirectoryOnly).Length : 0;
+        if (conceptCount < 9)
+        {
+            issues.Add("Expected at least 9 Unity concept references, found " + conceptCount + ".");
         }
     }
 

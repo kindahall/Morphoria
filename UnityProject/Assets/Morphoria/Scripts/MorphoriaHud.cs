@@ -9,6 +9,10 @@ namespace Morphoria
         public MorphoriaPlayer player;
         public MiniBoss miniBoss;
         public string objective = "Liberez les villageois";
+        public bool showLevelGoals = true;
+        public int targetGoldenStars = 50;
+        public int targetPrismStars = 5;
+        public int targetVillagers = 4;
 
         private GUIStyle panelStyle;
         private GUIStyle titleStyle;
@@ -26,16 +30,27 @@ namespace Morphoria
             PlayerInventory inventory = player.Inventory;
             FormDefinition form = player.CurrentDefinition;
 
-            DrawPanel(new Rect(18f, 18f, 250f, 128f), form.accent);
+            float panelHeight = showLevelGoals ? 154f : 102f;
+            DrawPanel(new Rect(18f, 18f, 270f, panelHeight), form.accent);
             GUI.Label(new Rect(36f, 28f, 210f, 24f), form.heroName + " / " + form.displayName, titleStyle);
             GUI.Label(new Rect(36f, 58f, 210f, 24f), "Coeurs  " + Hearts(inventory.Hearts), labelStyle);
-            GUI.Label(new Rect(36f, 84f, 210f, 24f), "Etoiles  " + inventory.GoldenStars + " / 50", labelStyle);
-            GUI.Label(new Rect(36f, 110f, 210f, 24f), "Prismes  " + inventory.ChoiceStars + "    Villageois  " + inventory.VillagersSaved + " / 4", labelStyle);
+
+            if (showLevelGoals)
+            {
+                GUI.Label(new Rect(36f, 84f, 230f, 24f), "Etoiles  " + inventory.GoldenStars + " / " + targetGoldenStars, labelStyle);
+                GUI.Label(new Rect(36f, 110f, 230f, 24f), "Prismes  " + inventory.PrismObjectivesCollected + " / " + targetPrismStars + "    Stock  " + inventory.ChoiceStars, labelStyle);
+                GUI.Label(new Rect(36f, 136f, 230f, 24f), "Villageois  " + inventory.VillagersSaved + " / " + targetVillagers, labelStyle);
+            }
+            else
+            {
+                GUI.Label(new Rect(36f, 84f, 230f, 24f), "Prismes  " + inventory.ChoiceStars, labelStyle);
+            }
 
             if (player.ForcedFormTimer > 0f)
             {
-                DrawPanel(new Rect(18f, 158f, 250f, 46f), form.accent);
-                GUI.Label(new Rect(36f, 168f, 210f, 24f), "Timer  " + player.ForcedFormTimer.ToString("0.0") + " s", labelStyle);
+                float timerY = 30f + panelHeight;
+                DrawPanel(new Rect(18f, timerY, 270f, 46f), form.accent);
+                GUI.Label(new Rect(36f, timerY + 10f, 230f, 24f), "Timer  " + player.ForcedFormTimer.ToString("0.0") + " s", labelStyle);
             }
 
             DrawPanel(new Rect(Screen.width - 318f, 18f, 300f, 86f), form.accent);

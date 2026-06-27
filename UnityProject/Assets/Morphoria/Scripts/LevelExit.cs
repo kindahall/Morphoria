@@ -31,7 +31,7 @@ namespace Morphoria
             completing = true;
             player.ShowFeedback("Niveau termine");
             MorphoriaGameSession session = MorphoriaGameSession.GetOrCreate();
-            session.MarkCurrentLevelComplete(player.Inventory.GoldenStars, player.Inventory.ChoiceStars, player.Inventory.VillagersSaved);
+            session.MarkCurrentLevelComplete(player.Inventory.GoldenStars, player.Inventory.PrismObjectivesCollected, player.Inventory.VillagersSaved);
             session.LoadSceneAfterDelay(MorphoriaGameContent.HubScene, 1.35f);
         }
     }

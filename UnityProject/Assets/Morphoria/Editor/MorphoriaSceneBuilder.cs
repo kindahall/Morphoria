@@ -76,6 +76,7 @@ public static class MorphoriaSceneBuilder
         Camera camera = CreateCamera(player.transform);
         player.mainCamera = camera;
         MorphoriaHud hud = CreateHud(player);
+        ConfigureHudForLevel(hud, MorphoriaGameContent.Levels[0]);
         CreatePauseMenu();
 
         Vector3[] path =
@@ -168,6 +169,7 @@ public static class MorphoriaSceneBuilder
     {
         EnsureFolders();
         CreateMaterials();
+        MorphoriaReferenceImporter.SyncReferences();
 
         BuildMainMenuScene();
         BuildHubScene();
@@ -226,6 +228,7 @@ public static class MorphoriaSceneBuilder
         player.mainCamera = camera;
         MorphoriaHud hud = CreateHud(player);
         hud.objective = "Choisissez une destination";
+        hud.showLevelGoals = false;
         CreatePauseMenu();
         new GameObject("Hub_State").AddComponent<MorphoriaHubState>();
 
@@ -319,6 +322,7 @@ public static class MorphoriaSceneBuilder
         player.mainCamera = camera;
         MorphoriaHud hud = CreateHud(player);
         hud.objective = level.targetVillagers > 0 ? "Liberez les villageois" : "Atteignez le portail";
+        ConfigureHudForLevel(hud, level);
         CreatePauseMenu();
 
         Material primary = GetPrimaryMaterial(level);
@@ -350,8 +354,8 @@ public static class MorphoriaSceneBuilder
 
         CreateAdventureMechanics(level, obstacles, environment);
         CreateCheckpoint(path[3], root);
-        CreateStars(path, collectibles);
-        CreateChoiceStarsForPath(level.sceneName, path, collectibles);
+        CreateStars(path, collectibles, level.targetGoldenStars);
+        CreateChoiceStarsForPath(level.sceneName, path, collectibles, level.targetPrismStars);
 
         if (level.targetVillagers > 0)
         {
@@ -518,12 +522,32 @@ public static class MorphoriaSceneBuilder
         }
     }
 
-    private static void CreateChoiceStarsForPath(string prefix, Vector3[] path, Transform parent)
+    private static void CreateChoiceStarsForPath(string prefix, Vector3[] path, Transform parent, int targetCount)
     {
-        for (int i = 1; i < path.Length - 1; i += 2)
+        for (int i = 0; i < targetCount; i++)
         {
-            CreateStar("ChoiceStar_" + prefix + "_" + i, path[i] + new Vector3(0f, 0.75f, -2.1f), CollectibleKind.ChoiceStar, prismMat, parent);
+            Vector3 position = SamplePath(path, (i + 1f) / (targetCount + 1f));
+            position += new Vector3(0f, 0.75f, i % 2 == 0 ? -2.1f : 2.1f);
+            CreateStar("ChoiceStar_" + prefix + "_" + (i + 1).ToString("00"), position, CollectibleKind.ChoiceStar, prismMat, parent);
         }
+    }
+
+    private static Vector3 SamplePath(Vector3[] path, float t)
+    {
+        if (path == null || path.Length == 0)
+        {
+            return Vector3.zero;
+        }
+
+        if (path.Length == 1)
+        {
+            return path[0];
+        }
+
+        float scaled = Mathf.Clamp01(t) * (path.Length - 1);
+        int index = Mathf.Min(path.Length - 2, Mathf.FloorToInt(scaled));
+        float localT = scaled - index;
+        return Vector3.Lerp(path[index], path[index + 1], localT);
     }
 
     private static Camera CreateShellCamera(string name, Vector3 position, Vector3 lookAt, Color background, float fieldOfView)
@@ -717,6 +741,14 @@ public static class MorphoriaSceneBuilder
         return controller;
     }
 
+    private static void ConfigureHudForLevel(MorphoriaHud hud, MorphoriaLevelInfo level)
+    {
+        hud.showLevelGoals = true;
+        hud.targetGoldenStars = level.targetGoldenStars;
+        hud.targetPrismStars = level.targetPrismStars;
+        hud.targetVillagers = level.targetVillagers;
+    }
+
     private static GameObject CreateIsland(string name, Vector3 position, Vector3 scale, Material material, Transform parent)
     {
         GameObject top = CreateCube(name, position, scale, material, parent);
@@ -908,13 +940,15 @@ public static class MorphoriaSceneBuilder
         CreateCube("Village_Coeur_Prismatique_Rappel", new Vector3(-38.5f, 1.2f, 3.1f), new Vector3(0.8f, 1.25f, 0.8f), prismMat, parent).transform.rotation = Quaternion.Euler(0f, 22f, 45f);
     }
 
-    private static void CreateStars(Vector3[] path, Transform parent)
+    private static void CreateStars(Vector3[] path, Transform parent, int targetCount = 50)
     {
         int created = 0;
-        for (int i = 0; i < path.Length - 1 && created < 50; i++)
+        int segmentCount = Mathf.Max(1, path.Length - 1);
+        for (int i = 0; i < segmentCount && created < targetCount; i++)
         {
-            int count = i == path.Length - 2 ? 8 : 7;
-            for (int j = 0; j < count && created < 50; j++)
+            int remainingSegments = segmentCount - i;
+            int count = Mathf.CeilToInt((targetCount - created) / (float)remainingSegments);
+            for (int j = 0; j < count && created < targetCount; j++)
             {
                 float t = (j + 1f) / (count + 1f);
                 Vector3 position = Vector3.Lerp(path[i], path[i + 1], t);

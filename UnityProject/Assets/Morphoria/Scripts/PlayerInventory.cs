@@ -12,7 +12,9 @@ namespace Morphoria
         public int Hearts { get; private set; }
         public int GoldenStars { get; private set; }
         public int ChoiceStars { get; private set; }
+        public int ChoiceStarsCollected { get; private set; }
         public int PrismStars { get; private set; }
+        public int PrismObjectivesCollected => ChoiceStarsCollected + PrismStars;
         public int VillagersSaved { get; private set; }
 
         public event Action Changed;
@@ -32,6 +34,7 @@ namespace Morphoria
                     break;
                 case CollectibleKind.ChoiceStar:
                     ChoiceStars += amount;
+                    ChoiceStarsCollected += amount;
                     break;
                 case CollectibleKind.PrismStar:
                     PrismStars += amount;
