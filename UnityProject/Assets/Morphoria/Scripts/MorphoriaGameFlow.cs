@@ -156,6 +156,86 @@ namespace Morphoria
         public List<MorphoriaLevelProgress> levels = new List<MorphoriaLevelProgress>();
     }
 
+    public static class MorphoriaCampaignProgression
+    {
+        public static MorphoriaLevelClearResult MarkLevelComplete(MorphoriaSaveData data, string levelId, int goldenStars, int prismStars, int villagersSaved)
+        {
+            MorphoriaSaveSystem.Normalize(data);
+            MorphoriaLevelInfo level = MorphoriaGameContent.GetLevel(levelId);
+            MorphoriaLevelProgress progress = MorphoriaSaveSystem.GetProgress(data, level.id);
+            MorphoriaLevelInfo next = MorphoriaGameContent.GetNextLevel(level.id);
+            MorphoriaLevelProgress nextProgress = next != null ? MorphoriaSaveSystem.GetProgress(data, next.id) : null;
+
+            bool firstClear = !progress.completed;
+            bool newBest =
+                goldenStars > progress.bestGoldenStars ||
+                prismStars > progress.bestPrismStars ||
+                villagersSaved > progress.bestVillagers;
+            bool unlockedNext = nextProgress != null && !nextProgress.unlocked;
+
+            progress.completed = true;
+            progress.clears++;
+            progress.bestGoldenStars = Mathf.Max(progress.bestGoldenStars, goldenStars);
+            progress.bestPrismStars = Mathf.Max(progress.bestPrismStars, prismStars);
+            progress.bestVillagers = Mathf.Max(progress.bestVillagers, villagersSaved);
+
+            if (next != null)
+            {
+                nextProgress.unlocked = true;
+            }
+            else
+            {
+                data.finalBossDefeated = true;
+            }
+
+            data.currentLevelId = level.id;
+            data.lastScene = MorphoriaGameContent.HubScene;
+            MorphoriaSaveSystem.Normalize(data);
+
+            return new MorphoriaLevelClearResult
+            {
+                levelId = level.id,
+                levelName = level.displayName,
+                rank = RankFor(level, goldenStars, prismStars, villagersSaved),
+                nextLevelName = next != null ? next.displayName : string.Empty,
+                firstClear = firstClear,
+                newBest = newBest,
+                unlockedNextLevel = unlockedNext,
+                goldenStars = goldenStars,
+                targetGoldenStars = level.targetGoldenStars,
+                prismStars = prismStars,
+                targetPrismStars = level.targetPrismStars,
+                villagersSaved = villagersSaved,
+                targetVillagers = level.targetVillagers
+            };
+        }
+
+        private static string RankFor(MorphoriaLevelInfo level, int goldenStars, int prismStars, int villagersSaved)
+        {
+            float goldenRatio = level.targetGoldenStars <= 0 ? 1f : goldenStars / (float)level.targetGoldenStars;
+            float prismRatio = level.targetPrismStars <= 0 ? 1f : prismStars / (float)level.targetPrismStars;
+            float villagerRatio = level.targetVillagers <= 0 ? 1f : villagersSaved / (float)level.targetVillagers;
+            float score = goldenRatio * 0.45f + prismRatio * 0.25f + villagerRatio * 0.3f;
+
+            if (score >= 0.98f)
+            {
+                return "Prisme";
+            }
+
+            if (score >= 0.76f)
+            {
+                return "Or";
+            }
+
+            if (score >= 0.48f)
+            {
+                return "Argent";
+            }
+
+            return "Bronze";
+        }
+    }
+
     public static class MorphoriaSaveSystem
     {
         private const string SaveFileName = "morphoria_save.json";

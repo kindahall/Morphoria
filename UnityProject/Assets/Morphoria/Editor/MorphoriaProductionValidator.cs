@@ -20,6 +20,7 @@ public static class MorphoriaProductionValidator
         ValidateBuildSettings(expectedScenePaths, issues);
         ValidateVisualReferences(issues);
         ValidateCharacterPrefabs(issues);
+        ValidateCampaignProgression(issues);
 
         for (int i = 0; i < expectedScenePaths.Count; i++)
         {
@@ -37,6 +38,77 @@ public static class MorphoriaProductionValidator
         }
 
         Debug.Log("Morphoria production validation passed for " + expectedScenePaths.Count + " scene(s).");
+    }
+
+    private static void ValidateCampaignProgression(List<string> issues)
+    {
+        MorphoriaSaveData data = MorphoriaSaveSystem.CreateNew();
+        if (data.levels.Count != MorphoriaGameContent.Levels.Length)
+        {
+            issues.Add("Campaign save should track " + MorphoriaGameContent.Levels.Length + " levels, found " + data.levels.Count + ".");
+            return;
+        }
+
+        for (int i = 0; i < MorphoriaGameContent.Levels.Length; i++)
+        {
+            MorphoriaLevelInfo level = MorphoriaGameContent.Levels[i];
+            MorphoriaLevelProgress progress = MorphoriaSaveSystem.GetProgress(data, level.id);
+            bool shouldBeUnlocked = i == 0;
+            if (progress.unlocked != shouldBeUnlocked)
+            {
+                issues.Add("New campaign unlock state is wrong for " + level.id + ".");
+            }
+        }
+
+        int expectedGolden = 0;
+        int expectedPrism = 0;
+        int expectedVillagers = 0;
+        for (int i = 0; i < MorphoriaGameContent.Levels.Length; i++)
+        {
+            MorphoriaLevelInfo level = MorphoriaGameContent.Levels[i];
+            MorphoriaLevelClearResult result = MorphoriaCampaignProgression.MarkLevelComplete(data, level.id, level.targetGoldenStars, level.targetPrismStars, level.targetVillagers);
+            expectedGolden += level.targetGoldenStars;
+            expectedPrism += level.targetPrismStars;
+            expectedVillagers += level.targetVillagers;
+
+            if (!result.firstClear || !result.newBest || result.rank != "Prisme")
+            {
+                issues.Add("Perfect first clear result is wrong for " + level.id + ".");
+            }
+
+            MorphoriaLevelProgress progress = MorphoriaSaveSystem.GetProgress(data, level.id);
+            if (!progress.completed || progress.clears != 1)
+            {
+                issues.Add("Campaign clear did not complete " + level.id + ".");
+            }
+
+            MorphoriaLevelInfo next = MorphoriaGameContent.GetNextLevel(level.id);
+            if (next != null)
+            {
+                MorphoriaLevelProgress nextProgress = MorphoriaSaveSystem.GetProgress(data, next.id);
+                if (!result.unlockedNextLevel || !nextProgress.unlocked || result.nextLevelName != next.displayName)
+                {
+                    issues.Add("Campaign clear did not unlock next level after " + level.id + ".");
+                }
+            }
+            else if (!data.finalBossDefeated || result.unlockedNextLevel || result.nextLevelName != string.Empty)
+            {
+                issues.Add("Final campaign clear did not mark Noctar defeated correctly.");
+            }
+        }
+
+        if (data.totalGoldenStars != expectedGolden || data.totalPrismStars != expectedPrism || data.totalVillagersSaved != expectedVillagers)
+        {
+            issues.Add("Campaign totals are wrong after full clear.");
+        }
+
+        MorphoriaLevelInfo firstLevel = MorphoriaGameContent.Levels[0];
+        MorphoriaLevelClearResult replay = MorphoriaCampaignProgression.MarkLevelComplete(data, firstLevel.id, 1, 0, 0);
+        MorphoriaLevelProgress firstProgress = MorphoriaSaveSystem.GetProgress(data, firstLevel.id);
+        if (replay.firstClear || replay.newBest || firstProgress.clears != 2 || firstProgress.bestGoldenStars != firstLevel.targetGoldenStars)
+        {
+            issues.Add("Replay clear should preserve best results while incrementing clears.");
+        }
     }
 
     private static List<string> ExpectedScenePaths()
