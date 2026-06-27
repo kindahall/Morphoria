@@ -47,6 +47,8 @@
 ## Campaign Shell
 
 - Main menu opens and can start a new game.
+- Main menu shows save progression, disables continue without a save, and asks confirmation before replacing a save.
+- Settings can change and restore volume, camera, color assist, feedback text, and reduced motion.
 - Hub loads with player, HUD, pause menu, portals, and KO recovery.
 - Hub shows damaged, repaired, garden, and final restoration states as campaign progress advances.
 - World map shows the six level nodes in order.

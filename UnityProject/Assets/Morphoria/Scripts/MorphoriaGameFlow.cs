@@ -535,20 +535,36 @@ namespace Morphoria
 
     public static class MorphoriaSettingsPanel
     {
+        private static GUIStyle titleStyle;
+        private static GUIStyle valueStyle;
+
         public static void Draw(MorphoriaGameSession session)
         {
+            EnsureStyles();
             MorphoriaSaveData data = session.SaveData;
 
-            GUILayout.Label("Reglages");
+            GUILayout.Space(6f);
+            GUILayout.Label("Reglages", titleStyle);
             float volume = GUILayout.HorizontalSlider(data.masterVolume, 0f, 1f, GUILayout.Width(260f));
-            GUILayout.Label("Volume  " + Mathf.RoundToInt(volume * 100f) + "%");
+            GUILayout.Label("Volume  " + Mathf.RoundToInt(volume * 100f) + "%", valueStyle);
 
             float sensitivity = GUILayout.HorizontalSlider(data.cameraSensitivity, 0.35f, 2.5f, GUILayout.Width(260f));
-            GUILayout.Label("Camera  " + sensitivity.ToString("0.00") + "x");
+            GUILayout.Label("Camera  " + sensitivity.ToString("0.00") + "x", valueStyle);
 
             bool colorAssist = GUILayout.Toggle(data.colorAssist, "Aide couleur");
             bool subtitles = GUILayout.Toggle(data.subtitlesEnabled, "Textes feedback");
             bool reduceMotion = GUILayout.Toggle(data.reduceMotion, "Mouvements reduits");
+
+            if (GUILayout.Button("Retablir reglages", GUILayout.Height(30f)))
+            {
+                data.masterVolume = 0.85f;
+                data.cameraSensitivity = 1.0f;
+                data.colorAssist = false;
+                data.subtitlesEnabled = true;
+                data.reduceMotion = false;
+                session.Save();
+                return;
+            }
 
             bool changed =
                 Mathf.Abs(volume - data.masterVolume) > 0.001f ||
@@ -566,6 +582,28 @@ namespace Morphoria
                 data.reduceMotion = reduceMotion;
                 session.Save();
             }
+        }
+
+        private static void EnsureStyles()
+        {
+            if (titleStyle != null)
+            {
+                return;
+            }
+
+            titleStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 16,
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleCenter,
+                normal = { textColor = new Color(0.86f, 0.94f, 1f) }
+            };
+            valueStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 12,
+                alignment = TextAnchor.MiddleCenter,
+                normal = { textColor = new Color(0.78f, 0.86f, 0.94f) }
+            };
         }
     }
 
