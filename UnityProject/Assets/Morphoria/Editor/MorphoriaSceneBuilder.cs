@@ -905,6 +905,14 @@ public static class MorphoriaSceneBuilder
         cameraObject.AddComponent<AudioListener>();
         ThirdPersonCamera controller = cameraObject.AddComponent<ThirdPersonCamera>();
         controller.target = target;
+        controller.distance = 7.1f;
+        controller.minDistance = 2.05f;
+        controller.maxDistance = 8.8f;
+        controller.defaultPitch = 24f;
+        controller.lookAheadDistance = 1.2f;
+        controller.collisionRadius = 0.36f;
+        controller.collisionPadding = 0.22f;
+        controller.recenterDelay = 1.05f;
         cameraObject.transform.position = target.position + new Vector3(0f, 4f, -8f);
         cameraObject.transform.LookAt(target.position + Vector3.up);
         return camera;

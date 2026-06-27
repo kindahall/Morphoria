@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace Morphoria
@@ -10,21 +8,35 @@ namespace Morphoria
         public Vector3 targetOffset = new Vector3(0f, 1.2f, 0f);
         public float distance = 7f;
         public float minDistance = 2.1f;
+        public float maxDistance = 8.6f;
+        public float zoomSensitivity = 1.1f;
+        public float zoomSharpness = 8f;
         public float shoulderOffset = 0.55f;
         public float collisionRadius = 0.34f;
         public float collisionPadding = 0.24f;
+        public float collisionRetreatSharpness = 18f;
         public float minPitch = -18f;
         public float maxPitch = 58f;
+        public float defaultPitch = 24f;
         public float mouseSensitivity = 2.3f;
         public float followSharpness = 12f;
         public float rotationSharpness = 16f;
         public float recenterDelay = 1.25f;
         public float recenterSharpness = 2.7f;
+        public float pitchRecenterSharpness = 1.4f;
+        public float lookAheadDistance = 1.15f;
+        public float lookAheadSharpness = 4.5f;
+        public KeyCode recenterKey = KeyCode.C;
         public bool reduceMotion;
         public LayerMask collisionMask = Physics.DefaultRaycastLayers;
 
+        private MorphoriaPlayer playerTarget;
+        private Transform cachedTarget;
+        private Vector3 smoothedLookAhead;
         private float yaw;
         private float pitch = 24f;
+        private float requestedDistance;
+        private float currentCastDistance;
         private float lastManualLookTime;
         private float impulseStrength;
         private float impulseTimer;
@@ -34,6 +46,9 @@ namespace Morphoria
             Vector3 euler = transform.eulerAngles;
             yaw = euler.y;
             pitch = NormalizePitch(euler.x);
+            defaultPitch = Mathf.Clamp(defaultPitch, minPitch, maxPitch);
+            requestedDistance = Mathf.Clamp(distance, minDistance, maxDistance);
+            currentCastDistance = requestedDistance;
             lastManualLookTime = Time.unscaledTime;
         }
 
@@ -43,6 +58,8 @@ namespace Morphoria
             {
                 return;
             }
+
+            CacheTarget();
 
             float lookX = Input.GetAxis("Mouse X");
             float lookY = Input.GetAxis("Mouse Y");
@@ -55,16 +72,27 @@ namespace Morphoria
             pitch -= lookY * mouseSensitivity;
             pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
 
+            float scroll = Input.GetAxis("Mouse ScrollWheel");
+            if (Mathf.Abs(scroll) > 0.01f)
+            {
+                requestedDistance = Mathf.Clamp(requestedDistance - scroll * zoomSensitivity * 4.2f, minDistance, maxDistance);
+                distance = requestedDistance;
+            }
+
             Vector2 moveInput = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
-            if (moveInput.sqrMagnitude > 0.28f && Time.unscaledTime - lastManualLookTime > recenterDelay)
+            bool shouldAutoRecenter = moveInput.sqrMagnitude > 0.28f && Time.unscaledTime - lastManualLookTime > recenterDelay;
+            bool shouldManualRecenter = Input.GetKeyDown(recenterKey) || Input.GetMouseButtonDown(2);
+            if (shouldAutoRecenter || shouldManualRecenter)
             {
                 yaw = Mathf.LerpAngle(yaw, target.eulerAngles.y, 1f - Mathf.Exp(-recenterSharpness * Time.deltaTime));
+                pitch = Mathf.Lerp(pitch, defaultPitch, 1f - Mathf.Exp(-pitchRecenterSharpness * Time.deltaTime));
             }
 
             Quaternion rotation = Quaternion.Euler(pitch, yaw, 0f);
-            Vector3 pivot = target.position + targetOffset;
-            Vector3 desiredPosition = pivot + rotation * Vector3.right * shoulderOffset - rotation * Vector3.forward * distance;
-            desiredPosition = ResolveCollision(pivot, desiredPosition);
+            Vector3 pivot = target.position + targetOffset + UpdateLookAhead();
+            Vector3 desiredPosition = pivot + rotation * Vector3.right * shoulderOffset - rotation * Vector3.forward * requestedDistance;
+            Vector3 resolvedPosition = ResolveCollision(pivot, desiredPosition);
+            desiredPosition = SmoothResolvedPosition(pivot, resolvedPosition);
 
             float moveSharpness = reduceMotion ? followSharpness * 1.35f : followSharpness;
             transform.position = Vector3.Lerp(transform.position, desiredPosition, 1f - Mathf.Exp(-moveSharpness * Time.deltaTime));
@@ -80,6 +108,17 @@ namespace Morphoria
             ApplyImpulse();
         }
 
+        private void OnValidate()
+        {
+            minDistance = Mathf.Max(0.8f, minDistance);
+            maxDistance = Mathf.Max(minDistance + 0.2f, maxDistance);
+            distance = Mathf.Clamp(distance, minDistance, maxDistance);
+            defaultPitch = Mathf.Clamp(defaultPitch, minPitch, maxPitch);
+            collisionRadius = Mathf.Max(0.05f, collisionRadius);
+            collisionPadding = Mathf.Max(0.02f, collisionPadding);
+            lookAheadDistance = Mathf.Max(0f, lookAheadDistance);
+        }
+
         public void AddImpulse(float strength, float duration)
         {
             if (reduceMotion)
@@ -90,6 +129,47 @@ namespace Morphoria
 
             impulseStrength = Mathf.Max(impulseStrength, strength);
             impulseTimer = Mathf.Max(impulseTimer, duration);
+        }
+
+        private void CacheTarget()
+        {
+            if (cachedTarget == target)
+            {
+                return;
+            }
+
+            cachedTarget = target;
+            playerTarget = target != null ? target.GetComponent<MorphoriaPlayer>() : null;
+            smoothedLookAhead = Vector3.zero;
+        }
+
+        private Vector3 UpdateLookAhead()
+        {
+            Vector3 desiredLookAhead = Vector3.zero;
+            if (playerTarget != null && lookAheadDistance > 0f)
+            {
+                float runSpeed = Mathf.Max(0.01f, playerTarget.CurrentDefinition.runSpeed);
+                float speed01 = Mathf.Clamp01(playerTarget.PlanarSpeed / runSpeed);
+                desiredLookAhead = target.forward * (lookAheadDistance * speed01);
+            }
+
+            smoothedLookAhead = Vector3.Lerp(smoothedLookAhead, desiredLookAhead, 1f - Mathf.Exp(-lookAheadSharpness * Time.deltaTime));
+            return smoothedLookAhead;
+        }
+
+        private Vector3 SmoothResolvedPosition(Vector3 pivot, Vector3 resolvedPosition)
+        {
+            Vector3 castVector = resolvedPosition - pivot;
+            float targetCastDistance = castVector.magnitude;
+            if (targetCastDistance <= 0.01f)
+            {
+                return resolvedPosition;
+            }
+
+            Vector3 castDirection = castVector / targetCastDistance;
+            float castSharpness = targetCastDistance < currentCastDistance ? collisionRetreatSharpness : zoomSharpness;
+            currentCastDistance = Mathf.Lerp(currentCastDistance, targetCastDistance, 1f - Mathf.Exp(castSharpness * -Time.deltaTime));
+            return pivot + castDirection * currentCastDistance;
         }
 
         private Vector3 ResolveCollision(Vector3 pivot, Vector3 desiredPosition)

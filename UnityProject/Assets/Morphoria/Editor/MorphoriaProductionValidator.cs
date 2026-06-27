@@ -143,6 +143,7 @@ public static class MorphoriaProductionValidator
             RequireOne<MorphoriaPlayer>(sceneName, issues);
             RequireOne<MorphoriaProceduralAnimator>(sceneName, issues);
             RequireOne<ThirdPersonCamera>(sceneName, issues);
+            ValidateThirdPersonCamera(sceneName, issues);
             RequireOne<MorphoriaHud>(sceneName, issues);
             RequireOne<MorphoriaHubState>(sceneName, issues);
             RequireAtLeast<MorphoriaScenePortal>(sceneName, 2, issues);
@@ -172,6 +173,7 @@ public static class MorphoriaProductionValidator
         RequireOne<MorphoriaPlayer>(sceneName, issues);
         RequireOne<MorphoriaProceduralAnimator>(sceneName, issues);
         RequireOne<ThirdPersonCamera>(sceneName, issues);
+        ValidateThirdPersonCamera(sceneName, issues);
         RequireOne<MorphoriaHud>(sceneName, issues);
         RequireOne<MorphoriaPauseMenu>(sceneName, issues);
         RequireOne<MorphoriaLevelResultScreen>(sceneName, issues);
@@ -233,6 +235,46 @@ public static class MorphoriaProductionValidator
             {
                 issues.Add(sceneName + ": exit requires " + exits[i].requiredVillagers + " villagers but scene has " + cages.Length + " cage(s).");
             }
+        }
+    }
+
+    private static void ValidateThirdPersonCamera(string sceneName, List<string> issues)
+    {
+        ThirdPersonCamera[] cameras = UnityEngine.Object.FindObjectsByType<ThirdPersonCamera>(FindObjectsInactive.Include);
+        if (cameras.Length != 1)
+        {
+            return;
+        }
+
+        ThirdPersonCamera camera = cameras[0];
+        if (camera.target == null)
+        {
+            issues.Add(sceneName + ": ThirdPersonCamera has no target.");
+        }
+
+        if (camera.minDistance <= 0f || camera.maxDistance <= camera.minDistance || camera.distance < camera.minDistance || camera.distance > camera.maxDistance)
+        {
+            issues.Add(sceneName + ": ThirdPersonCamera has invalid zoom distances.");
+        }
+
+        if (camera.collisionRadius <= 0.05f || camera.collisionPadding <= 0.01f || camera.collisionRetreatSharpness <= 0f)
+        {
+            issues.Add(sceneName + ": ThirdPersonCamera collision tuning is incomplete.");
+        }
+
+        if (camera.recenterDelay <= 0f || camera.recenterSharpness <= 0f || camera.pitchRecenterSharpness <= 0f)
+        {
+            issues.Add(sceneName + ": ThirdPersonCamera recenter tuning is incomplete.");
+        }
+
+        if (camera.defaultPitch < camera.minPitch || camera.defaultPitch > camera.maxPitch)
+        {
+            issues.Add(sceneName + ": ThirdPersonCamera default pitch is outside pitch limits.");
+        }
+
+        if (camera.lookAheadDistance <= 0f || camera.lookAheadSharpness <= 0f)
+        {
+            issues.Add(sceneName + ": ThirdPersonCamera look-ahead tuning is incomplete.");
         }
     }
 
