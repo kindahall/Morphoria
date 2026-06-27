@@ -11,7 +11,10 @@
 - Player walks with WASD or arrows.
 - Player runs with Shift.
 - Player jumps with Space.
+- Jump has coyote time and buffered input near platform edges.
+- Short jump, long jump, and falling arcs feel controlled.
 - Camera follows and rotates with mouse.
+- Camera recenters, zooms, avoids geometry, and reacts subtly to jump/landing.
 - Falling below the level returns to checkpoint.
 
 ## Forms

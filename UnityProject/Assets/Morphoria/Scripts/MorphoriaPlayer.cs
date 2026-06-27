@@ -16,13 +16,26 @@ namespace Morphoria
         public float interactionRadius = 2.4f;
         public LayerMask interactionMask = ~0;
 
+        [Header("Movement Feel")]
+        public float coyoteTime = 0.12f;
+        public float jumpBufferTime = 0.14f;
+        public float airControlMultiplier = 0.62f;
+        public float fallGravityMultiplier = 1.35f;
+        public float earlyJumpReleaseMultiplier = 1.75f;
+        public float maxFallSpeed = 24f;
+        public float landingImpulseThreshold = 7.5f;
+        public float landingCameraImpulse = 0.045f;
+
         private CharacterController controller;
         private PlayerInventory inventory;
         private MorphoriaAvatar avatar;
+        private ThirdPersonCamera cameraController;
         private MorphoriaForm currentForm = MorphoriaForm.Stone;
         private Vector3 currentHorizontalVelocity;
         private Vector3 externalVelocity;
         private float verticalVelocity;
+        private float coyoteTimer;
+        private float jumpBufferTimer;
         private float dashCooldown;
         private Vector3 checkpointPosition;
         private Quaternion checkpointRotation;
@@ -64,6 +77,8 @@ namespace Morphoria
                 mainCamera = Camera.main;
             }
 
+            ResolveCameraController();
+            coyoteTimer = coyoteTime;
             ApplyForm(currentForm, false);
         }
 
@@ -170,21 +185,60 @@ namespace Morphoria
             bool running = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
             float targetSpeed = running ? form.runSpeed : form.speed;
             Vector3 desiredVelocity = desiredDirection * targetSpeed;
-            currentHorizontalVelocity = Vector3.MoveTowards(currentHorizontalVelocity, desiredVelocity, form.acceleration * Time.deltaTime);
 
             bool grounded = controller.isGrounded;
+            if (grounded)
+            {
+                coyoteTimer = coyoteTime;
+            }
+            else
+            {
+                coyoteTimer = Mathf.Max(0f, coyoteTimer - Time.deltaTime);
+            }
+
+            if (Input.GetButtonDown("Jump"))
+            {
+                jumpBufferTimer = jumpBufferTime;
+            }
+            else
+            {
+                jumpBufferTimer = Mathf.Max(0f, jumpBufferTimer - Time.deltaTime);
+            }
+
+            float controlMultiplier = grounded ? 1f : airControlMultiplier;
+            currentHorizontalVelocity = Vector3.MoveTowards(currentHorizontalVelocity, desiredVelocity, form.acceleration * controlMultiplier * Time.deltaTime);
+
             IsGliding = false;
             if (grounded && verticalVelocity < 0f)
             {
                 verticalVelocity = -2f;
             }
 
-            if (Input.GetButtonDown("Jump") && grounded)
+            if (jumpBufferTimer > 0f && coyoteTimer > 0f)
             {
                 verticalVelocity = Mathf.Sqrt(form.jumpHeight * -2f * form.gravity);
+                jumpBufferTimer = 0f;
+                coyoteTimer = 0f;
+                grounded = false;
+                ResolveCameraController();
+                if (cameraController != null)
+                {
+                    cameraController.AddImpulse(0.025f, 0.08f);
+                }
             }
 
-            verticalVelocity += form.gravity * Time.deltaTime;
+            float gravityMultiplier = 1f;
+            if (!grounded && verticalVelocity < 0f)
+            {
+                gravityMultiplier = fallGravityMultiplier;
+            }
+            else if (!grounded && verticalVelocity > 0f && !Input.GetButton("Jump"))
+            {
+                gravityMultiplier = earlyJumpReleaseMultiplier;
+            }
+
+            verticalVelocity += form.gravity * gravityMultiplier * Time.deltaTime;
+            verticalVelocity = Mathf.Max(verticalVelocity, -maxFallSpeed);
 
             if (!grounded && form.canGlide && Input.GetButton("Jump") && verticalVelocity < -3f)
             {
@@ -206,7 +260,19 @@ namespace Morphoria
             Vector3 motion = currentHorizontalVelocity;
             motion.y = verticalVelocity;
             motion += externalVelocity;
+            float fallSpeedBeforeMove = verticalVelocity;
+            bool wasGrounded = grounded;
             controller.Move(motion * Time.deltaTime);
+            bool groundedAfterMove = controller.isGrounded;
+            if (groundedAfterMove && !wasGrounded && fallSpeedBeforeMove < -landingImpulseThreshold)
+            {
+                ResolveCameraController();
+                if (cameraController != null)
+                {
+                    cameraController.AddImpulse(landingCameraImpulse, 0.16f);
+                }
+            }
+
             externalVelocity = Vector3.Lerp(externalVelocity, Vector3.zero, 5f * Time.deltaTime);
 
             if (desiredDirection.sqrMagnitude > 0.05f)
@@ -289,6 +355,8 @@ namespace Morphoria
             controller.enabled = false;
             transform.SetPositionAndRotation(checkpointPosition, checkpointRotation);
             verticalVelocity = 0f;
+            coyoteTimer = coyoteTime;
+            jumpBufferTimer = 0f;
             currentHorizontalVelocity = Vector3.zero;
             externalVelocity = Vector3.zero;
             IsGliding = false;
@@ -432,6 +500,34 @@ namespace Morphoria
             }
 
             return best != null;
+        }
+
+        private void ResolveCameraController()
+        {
+            if (cameraController != null)
+            {
+                return;
+            }
+
+            if (mainCamera == null)
+            {
+                mainCamera = Camera.main;
+            }
+
+            cameraController = mainCamera != null ? mainCamera.GetComponent<ThirdPersonCamera>() : null;
+        }
+
+        private void OnValidate()
+        {
+            interactionRadius = Mathf.Max(0.6f, interactionRadius);
+            coyoteTime = Mathf.Clamp(coyoteTime, 0f, 0.35f);
+            jumpBufferTime = Mathf.Clamp(jumpBufferTime, 0f, 0.35f);
+            airControlMultiplier = Mathf.Clamp(airControlMultiplier, 0.15f, 1f);
+            fallGravityMultiplier = Mathf.Max(1f, fallGravityMultiplier);
+            earlyJumpReleaseMultiplier = Mathf.Max(1f, earlyJumpReleaseMultiplier);
+            maxFallSpeed = Mathf.Max(8f, maxFallSpeed);
+            landingImpulseThreshold = Mathf.Max(0f, landingImpulseThreshold);
+            landingCameraImpulse = Mathf.Clamp(landingCameraImpulse, 0f, 0.2f);
         }
     }
 }

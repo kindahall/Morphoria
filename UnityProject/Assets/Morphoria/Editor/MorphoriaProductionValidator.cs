@@ -256,6 +256,7 @@ public static class MorphoriaProductionValidator
             RequireOne<MorphoriaHubState>(sceneName, issues);
             RequireOne<MorphoriaHubRestoration>(sceneName, issues);
             RequireAtLeast<MorphoriaScenePortal>(sceneName, 2, issues);
+            ValidatePlayerControllerFeel(sceneName, issues);
             ValidatePlayerInventory(sceneName, issues);
             ValidateHubRestorationScene(sceneName, issues);
             MorphoriaHud[] hubHuds = UnityEngine.Object.FindObjectsByType<MorphoriaHud>(FindObjectsInactive.Include);
@@ -475,6 +476,7 @@ public static class MorphoriaProductionValidator
         RequireAtLeast<Checkpoint>(sceneName, 1, issues);
         RequireAtLeast<MorphoriaEnemy>(sceneName, 2, issues);
         RequireAtLeast<MorphoriaCollectible>(sceneName, 8, issues);
+        ValidatePlayerControllerFeel(sceneName, issues);
         ValidatePlayerInventory(sceneName, issues);
         if (level.targetVillagers > 0)
         {
@@ -604,6 +606,41 @@ public static class MorphoriaProductionValidator
         if (inventory.startingChoiceStars < 1)
         {
             issues.Add(sceneName + ": player should start with choice stars for form switching.");
+        }
+    }
+
+    private static void ValidatePlayerControllerFeel(string sceneName, List<string> issues)
+    {
+        MorphoriaPlayer[] players = UnityEngine.Object.FindObjectsByType<MorphoriaPlayer>(FindObjectsInactive.Include);
+        if (players.Length != 1)
+        {
+            return;
+        }
+
+        MorphoriaPlayer player = players[0];
+        if (player.coyoteTime <= 0f || player.jumpBufferTime <= 0f)
+        {
+            issues.Add(sceneName + ": player needs coyote time and jump buffering for platforming feel.");
+        }
+
+        if (player.airControlMultiplier <= 0f || player.airControlMultiplier > 1f)
+        {
+            issues.Add(sceneName + ": player air control multiplier should be between 0 and 1.");
+        }
+
+        if (player.fallGravityMultiplier < 1f || player.earlyJumpReleaseMultiplier < 1f)
+        {
+            issues.Add(sceneName + ": player gravity multipliers must not soften falls below normal gravity.");
+        }
+
+        if (player.maxFallSpeed < 12f)
+        {
+            issues.Add(sceneName + ": player max fall speed is too low for readable platforming.");
+        }
+
+        if (player.landingCameraImpulse <= 0f)
+        {
+            issues.Add(sceneName + ": player should send a subtle camera impulse on hard landings.");
         }
     }
 
