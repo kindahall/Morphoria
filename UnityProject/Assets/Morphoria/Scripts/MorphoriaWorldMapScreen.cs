@@ -13,12 +13,33 @@ namespace Morphoria
         private GUIStyle levelStyle;
         private GUIStyle labelStyle;
         private GUIStyle smallStyle;
+        private GUIStyle rankStyle;
         private GUIStyle panelStyle;
 
         private void Awake()
         {
             session = MorphoriaGameSession.GetOrCreate();
             selectedLevelId = session.SaveData.currentLevelId;
+        }
+
+        private void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.RightArrow))
+            {
+                SelectOffset(1);
+            }
+            else if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.LeftArrow))
+            {
+                SelectOffset(-1);
+            }
+            else if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
+            {
+                TryPlaySelected();
+            }
+            else if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                session.LoadHub();
+            }
         }
 
         private void OnGUI()
@@ -55,7 +76,7 @@ namespace Morphoria
                 MorphoriaLevelProgress progress = session.ProgressFor(level.id);
                 string state = progress.completed ? "Termine" : progress.unlocked ? "Disponible" : "Verrouille";
                 string stats = progress.completed
-                    ? progress.bestGoldenStars + "/" + level.targetGoldenStars + "  " + progress.bestPrismStars + "/" + level.targetPrismStars + "  " + progress.bestVillagers + "/" + level.targetVillagers
+                    ? RankFor(level, progress) + "  " + progress.bestGoldenStars + "/" + level.targetGoldenStars + "  " + progress.bestPrismStars + "/" + level.targetPrismStars + "  " + progress.bestVillagers + "/" + level.targetVillagers
                     : "--";
 
                 GUI.color = level.id == selectedLevelId ? Color.Lerp(world.color, Color.white, 0.45f) : Color.Lerp(world.color, Color.white, 0.18f);
@@ -97,22 +118,24 @@ namespace Morphoria
 
             string status = progress.completed ? "Termine" : progress.unlocked ? "Disponible" : "Verrouille";
             GUI.Label(new Rect(panel.x + 24f, panel.y + 106f, panel.width - 48f, 24f), status, labelStyle);
-            DrawStat(panel, 146f, "Etoiles", progress.bestGoldenStars, level.targetGoldenStars);
-            DrawStat(panel, 184f, "Prismes", progress.bestPrismStars, level.targetPrismStars);
-            DrawStat(panel, 222f, "Villageois", progress.bestVillagers, level.targetVillagers);
-            GUI.Label(new Rect(panel.x + 24f, panel.y + 264f, panel.width - 48f, 24f), "Clears  " + progress.clears, smallStyle);
+            GUI.Label(new Rect(panel.x + 24f, panel.y + 132f, panel.width - 48f, 28f), progress.completed ? "Rang  " + RankFor(level, progress) : "Rang  --", rankStyle);
+            DrawStat(panel, 174f, "Etoiles", progress.bestGoldenStars, level.targetGoldenStars, new Color(1f, 0.78f, 0.13f));
+            DrawStat(panel, 212f, "Prismes", progress.bestPrismStars, level.targetPrismStars, new Color(0.58f, 0.28f, 1f));
+            DrawStat(panel, 250f, "Villageois", progress.bestVillagers, level.targetVillagers, new Color(0.25f, 0.78f, 1f));
+            GUI.Label(new Rect(panel.x + 24f, panel.y + 292f, panel.width - 48f, 24f), "Clears  " + progress.clears, smallStyle);
+            GUI.Label(new Rect(panel.x + 24f, panel.y + 324f, panel.width - 48f, 64f), ObjectiveText(level, progress), smallStyle);
 
             GUILayout.BeginArea(new Rect(panel.x + 24f, panel.yMax - 70f, panel.width - 48f, 46f));
             GUI.enabled = progress.unlocked;
-            if (GUILayout.Button("Jouer", GUILayout.Height(42f)))
+            if (GUILayout.Button(progress.completed ? "Rejouer" : progress.unlocked ? "Jouer" : "Verrouille", GUILayout.Height(42f)))
             {
-                session.LoadLevel(level.id);
+                TryPlaySelected();
             }
             GUI.enabled = true;
             GUILayout.EndArea();
         }
 
-        private void DrawStat(Rect panel, float y, string label, int value, int target)
+        private void DrawStat(Rect panel, float y, string label, int value, int target, Color color)
         {
             GUI.Label(new Rect(panel.x + 24f, panel.y + y, 110f, 24f), label, labelStyle);
             GUI.Label(new Rect(panel.x + 134f, panel.y + y, 90f, 24f), value + " / " + target, labelStyle);
@@ -121,10 +144,71 @@ namespace Morphoria
             Color old = GUI.color;
             GUI.color = new Color(0.12f, 0.16f, 0.22f, 1f);
             GUI.DrawTexture(bar, Texture2D.whiteTexture);
-            GUI.color = new Color(0.9f, 0.72f, 0.22f, 1f);
+            GUI.color = color;
             float fill = target <= 0 ? 1f : Mathf.Clamp01(value / (float)target);
             GUI.DrawTexture(new Rect(bar.x, bar.y, bar.width * fill, bar.height), Texture2D.whiteTexture);
             GUI.color = old;
+        }
+
+        private void SelectOffset(int offset)
+        {
+            int selectedIndex = 0;
+            for (int i = 0; i < MorphoriaGameContent.Levels.Length; i++)
+            {
+                if (MorphoriaGameContent.Levels[i].id == selectedLevelId)
+                {
+                    selectedIndex = i;
+                    break;
+                }
+            }
+
+            int nextIndex = Mathf.Clamp(selectedIndex + offset, 0, MorphoriaGameContent.Levels.Length - 1);
+            selectedLevelId = MorphoriaGameContent.Levels[nextIndex].id;
+        }
+
+        private void TryPlaySelected()
+        {
+            MorphoriaLevelInfo level = MorphoriaGameContent.GetLevel(selectedLevelId);
+            MorphoriaLevelProgress progress = session.ProgressFor(level.id);
+            if (progress.unlocked)
+            {
+                session.LoadLevel(level.id);
+            }
+        }
+
+        private static string RankFor(MorphoriaLevelInfo level, MorphoriaLevelProgress progress)
+        {
+            return MorphoriaCampaignProgression.RankForProgress(level, progress.bestGoldenStars, progress.bestPrismStars, progress.bestVillagers);
+        }
+
+        private static string ObjectiveText(MorphoriaLevelInfo level, MorphoriaLevelProgress progress)
+        {
+            if (progress.completed)
+            {
+                return "Record conserve. Rejouez pour ameliorer vos etoiles, prismes et villageois.";
+            }
+
+            if (progress.unlocked)
+            {
+                return "Niveau ouvert. Le portail de ce monde est pret.";
+            }
+
+            MorphoriaLevelInfo previous = PreviousLevel(level);
+            return previous == null ? "Niveau verrouille." : "Terminez " + previous.displayName + " pour ouvrir ce portail.";
+        }
+
+        private static MorphoriaLevelInfo PreviousLevel(MorphoriaLevelInfo level)
+        {
+            int previousOrder = level.order - 1;
+            for (int i = 0; i < MorphoriaGameContent.Levels.Length; i++)
+            {
+                if (MorphoriaGameContent.Levels[i].order == previousOrder)
+                {
+                    return MorphoriaGameContent.Levels[i];
+                }
+            }
+
+            return null;
         }
 
         private void DrawBackdrop()
@@ -165,6 +249,14 @@ namespace Morphoria
             {
                 fontSize = 13,
                 normal = { textColor = new Color(0.82f, 0.88f, 0.94f) },
+                alignment = TextAnchor.MiddleLeft,
+                wordWrap = true
+            };
+            rankStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 18,
+                fontStyle = FontStyle.Bold,
+                normal = { textColor = new Color(1f, 0.78f, 0.13f) },
                 alignment = TextAnchor.MiddleLeft
             };
             panelStyle = new GUIStyle(GUI.skin.box);

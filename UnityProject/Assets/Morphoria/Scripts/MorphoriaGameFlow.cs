@@ -202,7 +202,7 @@ namespace Morphoria
             {
                 levelId = level.id,
                 levelName = level.displayName,
-                rank = RankFor(level, goldenStars, prismStars, villagersSaved),
+                rank = RankForProgress(level, goldenStars, prismStars, villagersSaved),
                 nextLevelId = next != null ? next.id : string.Empty,
                 nextLevelName = next != null ? next.displayName : string.Empty,
                 firstClear = firstClear,
@@ -218,7 +218,7 @@ namespace Morphoria
             };
         }
 
-        private static string RankFor(MorphoriaLevelInfo level, int goldenStars, int prismStars, int villagersSaved)
+        public static string RankForProgress(MorphoriaLevelInfo level, int goldenStars, int prismStars, int villagersSaved)
         {
             float goldenRatio = level.targetGoldenStars <= 0 ? 1f : goldenStars / (float)level.targetGoldenStars;
             float prismRatio = level.targetPrismStars <= 0 ? 1f : prismStars / (float)level.targetPrismStars;

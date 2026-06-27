@@ -53,6 +53,8 @@
 - Hub shows damaged, repaired, garden, and final restoration states as campaign progress advances.
 - World map shows the six level nodes in order.
 - World map nodes and routes visibly switch between locked, open, and completed states.
+- World map details show selected level rank, best stats, unlock objective, and replay/play state.
+- World map supports keyboard selection and Enter/Escape navigation.
 - Completing a level unlocks the next level.
 - Re-entering a level keeps previously collected stars hidden and previously rescued cages open while restoring the HUD counters.
 - The last level opens the finale scene.
