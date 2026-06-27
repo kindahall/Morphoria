@@ -159,6 +159,7 @@ public static class MorphoriaProductionValidator
             ValidatePlayableLevel(sceneName, issues);
         }
 
+        ValidatePlayerAvatarPrefabs(sceneName, issues);
         ValidateScenePortals(sceneName, issues);
     }
 
@@ -321,6 +322,15 @@ public static class MorphoriaProductionValidator
             "Assets/Morphoria/Prefabs/Characters/PF_Noctar.prefab"
         };
 
+        string[][] requiredAnimatedParts =
+        {
+            new[] { "left_eye", "right_eye", "left_fist", "right_fist", "amber_crack", "scarf" },
+            new[] { "left_eye", "right_eye", "left_wing", "right_wing", "leaf_crown", "orange_scarf" },
+            new[] { "left_eye", "right_eye", "fold_left", "fold_right", "paper_rune", "paper_hat" },
+            new[] { "left_eye", "right_eye", "left_blade", "right_blade", "left_handle", "right_handle", "blue_scarf" },
+            new[] { "left_eye", "right_eye", "left_shoulder", "right_shoulder", "crown_mid" }
+        };
+
         for (int i = 0; i < prefabPaths.Length; i++)
         {
             string path = prefabPaths[i];
@@ -341,6 +351,33 @@ public static class MorphoriaProductionValidator
             if (renderers.Length < 5)
             {
                 issues.Add("Character prefab has too few renderers: " + path + " (" + renderers.Length + ").");
+            }
+
+            for (int j = 0; j < requiredAnimatedParts[i].Length; j++)
+            {
+                string partName = requiredAnimatedParts[i][j];
+                if (prefab.transform.Find(partName) == null)
+                {
+                    issues.Add("Character prefab missing animated part " + partName + ": " + path + ".");
+                }
+            }
+        }
+    }
+
+    private static void ValidatePlayerAvatarPrefabs(string sceneName, List<string> issues)
+    {
+        MorphoriaPlayer[] players = UnityEngine.Object.FindObjectsByType<MorphoriaPlayer>(FindObjectsInactive.Include);
+        if (players.Length == 0)
+        {
+            return;
+        }
+
+        MorphoriaAvatar[] avatars = UnityEngine.Object.FindObjectsByType<MorphoriaAvatar>(FindObjectsInactive.Include);
+        for (int i = 0; i < avatars.Length; i++)
+        {
+            if (!avatars[i].HasAllFormPrefabs)
+            {
+                issues.Add(sceneName + ": player avatar does not reference all four form prefabs.");
             }
         }
     }

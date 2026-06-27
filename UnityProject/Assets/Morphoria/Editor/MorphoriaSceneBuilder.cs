@@ -52,6 +52,7 @@ public static class MorphoriaSceneBuilder
     {
         EnsureFolders();
         CreateMaterials();
+        MorphoriaPrefabBuilder.BuildCharacterPrefabs();
 
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         scene.name = MorphoriaGameContent.LevelOneScene;
@@ -837,20 +838,40 @@ public static class MorphoriaSceneBuilder
         }
 
         material.color = color;
-        if (material.HasProperty("_EmissionColor"))
+
+        if (material.HasProperty("_Mode"))
         {
-            material.SetColor("_EmissionColor", emission * 0.45f);
-            material.EnableKeyword("_EMISSION");
+            material.SetFloat("_Mode", transparent ? 3f : 0f);
         }
 
         if (transparent)
         {
+            material.SetOverrideTag("RenderType", "Transparent");
             material.SetInt("_SrcBlend", (int)BlendMode.SrcAlpha);
             material.SetInt("_DstBlend", (int)BlendMode.OneMinusSrcAlpha);
             material.SetInt("_ZWrite", 0);
             material.DisableKeyword("_ALPHATEST_ON");
             material.EnableKeyword("_ALPHABLEND_ON");
+            material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
             material.renderQueue = (int)RenderQueue.Transparent;
+        }
+        else
+        {
+            material.SetOverrideTag("RenderType", string.Empty);
+            material.SetInt("_SrcBlend", (int)BlendMode.One);
+            material.SetInt("_DstBlend", (int)BlendMode.Zero);
+            material.SetInt("_ZWrite", 1);
+            material.DisableKeyword("_ALPHATEST_ON");
+            material.DisableKeyword("_ALPHABLEND_ON");
+            material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+            material.renderQueue = -1;
+        }
+
+        if (material.HasProperty("_EmissionColor"))
+        {
+            material.SetColor("_EmissionColor", emission * 0.45f);
+            material.EnableKeyword("_EMISSION");
+            material.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
         }
 
         EditorUtility.SetDirty(material);
@@ -889,10 +910,25 @@ public static class MorphoriaSceneBuilder
         controller.radius = 0.45f;
         controller.center = new Vector3(0f, 1.08f, 0f);
         player.AddComponent<PlayerInventory>();
-        player.AddComponent<MorphoriaAvatar>();
+        MorphoriaAvatar avatar = player.AddComponent<MorphoriaAvatar>();
+        AssignCharacterPrefabs(avatar);
         MorphoriaPlayer morphoriaPlayer = player.AddComponent<MorphoriaPlayer>();
         player.AddComponent<MorphoriaProceduralAnimator>();
         return morphoriaPlayer;
+    }
+
+    private static void AssignCharacterPrefabs(MorphoriaAvatar avatar)
+    {
+        avatar.stonePrefab = LoadCharacterPrefab("PF_Rokko");
+        avatar.leafPrefab = LoadCharacterPrefab("PF_Luma");
+        avatar.paperPrefab = LoadCharacterPrefab("PF_Papyra");
+        avatar.scissorsPrefab = LoadCharacterPrefab("PF_Cizo");
+        EditorUtility.SetDirty(avatar);
+    }
+
+    private static GameObject LoadCharacterPrefab(string name)
+    {
+        return AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Morphoria/Prefabs/Characters/" + name + ".prefab");
     }
 
     private static Camera CreateCamera(Transform target)

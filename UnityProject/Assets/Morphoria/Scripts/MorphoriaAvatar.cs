@@ -6,15 +6,35 @@ namespace Morphoria
 {
     public sealed class MorphoriaAvatar : MonoBehaviour
     {
+        [Header("Character Prefabs")]
+        public GameObject stonePrefab;
+        public GameObject leafPrefab;
+        public GameObject paperPrefab;
+        public GameObject scissorsPrefab;
+
         private Transform visualRoot;
 
         public Transform VisualRoot => visualRoot;
+        public bool HasAllFormPrefabs => stonePrefab != null && leafPrefab != null && paperPrefab != null && scissorsPrefab != null;
 
         public void ApplyForm(FormDefinition form)
         {
             if (visualRoot != null)
             {
                 Destroy(visualRoot.gameObject);
+            }
+
+            GameObject prefab = PrefabFor(form.form);
+            if (prefab != null)
+            {
+                GameObject instance = Instantiate(prefab, transform);
+                instance.name = "Avatar_" + form.heroName;
+                visualRoot = instance.transform;
+                visualRoot.localPosition = Vector3.zero;
+                visualRoot.localRotation = Quaternion.identity;
+                visualRoot.localScale = Vector3.one;
+                RemoveVisualColliders(visualRoot);
+                return;
             }
 
             visualRoot = new GameObject("Avatar_" + form.heroName).transform;
@@ -35,6 +55,32 @@ namespace Morphoria
                 case MorphoriaForm.Scissors:
                     BuildScissors(form);
                     break;
+            }
+        }
+
+        private GameObject PrefabFor(MorphoriaForm form)
+        {
+            switch (form)
+            {
+                case MorphoriaForm.Stone:
+                    return stonePrefab;
+                case MorphoriaForm.Leaf:
+                    return leafPrefab;
+                case MorphoriaForm.Paper:
+                    return paperPrefab;
+                case MorphoriaForm.Scissors:
+                    return scissorsPrefab;
+                default:
+                    return null;
+            }
+        }
+
+        private static void RemoveVisualColliders(Transform root)
+        {
+            Collider[] colliders = root.GetComponentsInChildren<Collider>(true);
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                Destroy(colliders[i]);
             }
         }
 

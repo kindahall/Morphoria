@@ -40,7 +40,7 @@ public static class MorphoriaPrefabBuilder
         Part(root, "left_foot", PrimitiveType.Cube, new Vector3(-0.28f, 0.16f, 0.08f), new Vector3(0.44f, 0.22f, 0.58f), Quaternion.identity, stone);
         Part(root, "right_foot", PrimitiveType.Cube, new Vector3(0.28f, 0.16f, 0.08f), new Vector3(0.44f, 0.22f, 0.58f), Quaternion.identity, stone);
         Part(root, "scarf", PrimitiveType.Cube, new Vector3(0f, 1.42f, 0.08f), new Vector3(1.1f, 0.12f, 0.12f), Quaternion.identity, leaf);
-        Part(root, "crack", PrimitiveType.Cube, new Vector3(0.02f, 0.96f, 0.49f), new Vector3(0.08f, 0.64f, 0.04f), Quaternion.identity, gold);
+        Part(root, "amber_crack", PrimitiveType.Cube, new Vector3(0.02f, 0.96f, 0.49f), new Vector3(0.08f, 0.64f, 0.04f), Quaternion.identity, gold);
         Eyes(root, new Vector3(-0.18f, 1.9f, 0.34f), new Vector3(0.18f, 1.9f, 0.34f), gold);
         return root;
     }
@@ -52,7 +52,7 @@ public static class MorphoriaPrefabBuilder
         Part(root, "head", PrimitiveType.Sphere, new Vector3(0f, 1.75f, 0f), new Vector3(0.62f, 0.58f, 0.62f), Quaternion.identity, leaf);
         Part(root, "left_wing", PrimitiveType.Cube, new Vector3(-0.68f, 1.18f, -0.05f), new Vector3(0.12f, 0.68f, 1f), Quaternion.Euler(0f, -18f, -8f), gold);
         Part(root, "right_wing", PrimitiveType.Cube, new Vector3(0.68f, 1.18f, -0.05f), new Vector3(0.12f, 0.68f, 1f), Quaternion.Euler(0f, 18f, 8f), gold);
-        Part(root, "scarf", PrimitiveType.Cube, new Vector3(0f, 1.36f, 0.08f), new Vector3(0.86f, 0.1f, 0.1f), Quaternion.identity, gold);
+        Part(root, "orange_scarf", PrimitiveType.Cube, new Vector3(0f, 1.36f, 0.08f), new Vector3(0.86f, 0.1f, 0.1f), Quaternion.identity, gold);
         Part(root, "leaf_crown", PrimitiveType.Cube, new Vector3(0f, 2.12f, 0f), new Vector3(0.26f, 0.55f, 0.08f), Quaternion.Euler(0f, 0f, 36f), gold);
         Eyes(root, new Vector3(-0.15f, 1.8f, 0.28f), new Vector3(0.15f, 1.8f, 0.28f), gold);
         return root;
@@ -65,8 +65,8 @@ public static class MorphoriaPrefabBuilder
         Part(root, "head", PrimitiveType.Cube, new Vector3(0f, 1.78f, 0f), new Vector3(0.7f, 0.54f, 0.22f), Quaternion.identity, paper);
         Part(root, "fold_left", PrimitiveType.Cube, new Vector3(-0.48f, 1.2f, 0.03f), new Vector3(0.18f, 0.8f, 0.18f), Quaternion.Euler(0f, -18f, 0f), prism);
         Part(root, "fold_right", PrimitiveType.Cube, new Vector3(0.48f, 1.2f, 0.03f), new Vector3(0.18f, 0.8f, 0.18f), Quaternion.Euler(0f, 18f, 0f), prism);
-        Part(root, "rune", PrimitiveType.Cube, new Vector3(0f, 1.13f, 0.13f), new Vector3(0.42f, 0.06f, 0.04f), Quaternion.identity, prism);
-        Part(root, "hat_fold", PrimitiveType.Cube, new Vector3(0f, 2.12f, 0f), new Vector3(0.76f, 0.2f, 0.2f), Quaternion.Euler(0f, 0f, 45f), paper);
+        Part(root, "paper_rune", PrimitiveType.Cube, new Vector3(0f, 1.13f, 0.13f), new Vector3(0.42f, 0.06f, 0.04f), Quaternion.identity, prism);
+        Part(root, "paper_hat", PrimitiveType.Cube, new Vector3(0f, 2.12f, 0f), new Vector3(0.76f, 0.2f, 0.2f), Quaternion.Euler(0f, 0f, 45f), paper);
         Eyes(root, new Vector3(-0.15f, 1.84f, 0.13f), new Vector3(0.15f, 1.84f, 0.13f), prism);
         return root;
     }
@@ -80,7 +80,7 @@ public static class MorphoriaPrefabBuilder
         Part(root, "right_blade", PrimitiveType.Cube, new Vector3(0.66f, 1.05f, 0.12f), new Vector3(0.16f, 0.9f, 0.18f), Quaternion.Euler(0f, 0f, -18f), scissors);
         Part(root, "left_handle", PrimitiveType.Cylinder, new Vector3(-0.28f, 0.36f, 0.12f), new Vector3(0.22f, 0.06f, 0.22f), Quaternion.Euler(90f, 0f, 0f), dark);
         Part(root, "right_handle", PrimitiveType.Cylinder, new Vector3(0.28f, 0.36f, 0.12f), new Vector3(0.22f, 0.06f, 0.22f), Quaternion.Euler(90f, 0f, 0f), dark);
-        Part(root, "scarf", PrimitiveType.Cube, new Vector3(0f, 1.35f, 0.08f), new Vector3(0.84f, 0.1f, 0.1f), Quaternion.identity, dark);
+        Part(root, "blue_scarf", PrimitiveType.Cube, new Vector3(0f, 1.35f, 0.08f), new Vector3(0.84f, 0.1f, 0.1f), Quaternion.identity, dark);
         Eyes(root, new Vector3(-0.14f, 1.8f, 0.28f), new Vector3(0.14f, 1.8f, 0.28f), scissors);
         return root;
     }
