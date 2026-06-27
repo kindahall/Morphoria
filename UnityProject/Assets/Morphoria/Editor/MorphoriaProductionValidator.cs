@@ -176,6 +176,7 @@ public static class MorphoriaProductionValidator
         RequireOne<MorphoriaPauseMenu>(sceneName, issues);
         RequireOne<MorphoriaLevelResultScreen>(sceneName, issues);
         RequireOne<LevelExit>(sceneName, issues);
+        RequireAtLeast<MorphoriaEnemy>(sceneName, 2, issues);
         RequireAtLeast<MorphoriaCollectible>(sceneName, 8, issues);
 
         LevelExit[] exits = UnityEngine.Object.FindObjectsByType<LevelExit>(FindObjectsInactive.Include);

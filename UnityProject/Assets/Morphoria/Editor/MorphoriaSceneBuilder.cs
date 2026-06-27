@@ -64,10 +64,12 @@ public static class MorphoriaSceneBuilder
         Transform root = new GameObject("Morphoria_VerticalSlice").transform;
         Transform environment = new GameObject("Floating_Islands_And_Path").transform;
         Transform obstacles = new GameObject("Form_Obstacles").transform;
+        Transform enemies = new GameObject("Standard_Enemies").transform;
         Transform collectibles = new GameObject("Collectibles_50_Golden_5_Prism").transform;
         Transform cages = new GameObject("Villager_Cages").transform;
         environment.SetParent(root);
         obstacles.SetParent(root);
+        enemies.SetParent(root);
         collectibles.SetParent(root);
         cages.SetParent(root);
 
@@ -149,6 +151,7 @@ public static class MorphoriaSceneBuilder
         CreateVillagerCage("Cage_Papyra", new Vector3(43.2f, 1.25f, -4f), MorphoriaAbility.Fold, boss, cages);
         CreateVillagerCage("Cage_Cizo", new Vector3(47f, 1.25f, -4f), MorphoriaAbility.Cut, boss, cages);
 
+        CreateVerticalSliceEnemies(enemies);
         CreateExitPortal(new Vector3(58.5f, 1.1f, 2f), root);
         CreateSectionLabels(root);
         CreateDecor(root);
@@ -315,10 +318,12 @@ public static class MorphoriaSceneBuilder
         Transform root = new GameObject(level.sceneName + "_Adventure").transform;
         Transform environment = new GameObject("Floating_Islands").transform;
         Transform obstacles = new GameObject("Form_Obstacles").transform;
+        Transform enemies = new GameObject("Standard_Enemies").transform;
         Transform collectibles = new GameObject("Collectibles").transform;
         Transform cages = new GameObject("Villager_Cages").transform;
         environment.SetParent(root);
         obstacles.SetParent(root);
+        enemies.SetParent(root);
         collectibles.SetParent(root);
         cages.SetParent(root);
 
@@ -360,6 +365,7 @@ public static class MorphoriaSceneBuilder
         }
 
         CreateAdventureMechanics(level, obstacles, environment);
+        CreateAdventureEnemies(level, path, enemies);
         CreateCheckpoint(path[3], root);
         CreateStars(path, collectibles, level.targetGoldenStars);
         CreateChoiceStarsForPath(level.sceneName, path, collectibles, level.targetPrismStars);
@@ -514,6 +520,157 @@ public static class MorphoriaSceneBuilder
         {
             CreateAbilityObstacle("Obstacle_Equipe", new Vector3(-13f, 1.35f, 1.8f), new Vector3(0.8f, 2.7f, 4.2f), neutralMat, MorphoriaAbility.Any, "Passage ouvert", obstacles);
         }
+    }
+
+    private static void CreateVerticalSliceEnemies(Transform parent)
+    {
+        CreateEnemy("Picboule_Pierre", "Picboule", new Vector3(-21.6f, 1.35f, -2.2f), MorphoriaAbility.Break, stoneMat, parent, Vector3.forward);
+        CreateEnemy("Flottevent_Feuille", "Flottevent", new Vector3(-8.6f, 3.65f, 5.2f), MorphoriaAbility.Glide, leafMat, parent, Vector3.right, 1.9f, 1.35f, 0.28f);
+        CreateEnemy("Tache_Encre_Papier", "Tache-Encre", new Vector3(5.7f, 1.25f, 2.45f), MorphoriaAbility.Fold, paperMat, parent, Vector3.forward);
+        CreateEnemy("Roncivore_Ciseaux", "Roncivore", new Vector3(18.5f, 1.25f, -5.05f), MorphoriaAbility.Cut, scissorsMat, parent, Vector3.right);
+    }
+
+    private static void CreateAdventureEnemies(MorphoriaLevelInfo level, Vector3[] path, Transform parent)
+    {
+        if (level.worldId == "canyon")
+        {
+            CreateEnemy("Canyon_Picboule", "Picboule", path[1] + new Vector3(0f, 0.35f, -2.2f), MorphoriaAbility.Break, stoneMat, parent, Vector3.forward);
+            CreateEnemy("Canyon_Roule_Roc", "Roule-Roc", path[3] + new Vector3(0f, 0.35f, 2.2f), MorphoriaAbility.Fold, paperMat, parent, Vector3.right);
+        }
+        else if (level.worldId == "gardens")
+        {
+            CreateEnemy("Jardins_Flottevent", "Flottevent", path[1] + new Vector3(0f, 1.35f, 2.25f), MorphoriaAbility.Glide, leafMat, parent, Vector3.right, 1.9f, 1.3f, 0.3f);
+            CreateEnemy("Jardins_Roncivore", "Roncivore", path[3] + new Vector3(0f, 0.35f, -2.25f), MorphoriaAbility.Cut, scissorsMat, parent, Vector3.forward);
+        }
+        else if (level.worldId == "archives")
+        {
+            CreateEnemy("Archives_Tache_Encre", "Tache-Encre", path[1] + new Vector3(0f, 0.35f, -2.2f), MorphoriaAbility.Fold, paperMat, parent, Vector3.forward);
+            CreateEnemy("Archives_Papier_Masque", "Papier-Masque", path[3] + new Vector3(0f, 0.35f, 2.2f), MorphoriaAbility.Cut, scissorsMat, parent, Vector3.right);
+        }
+        else if (level.worldId == "forge")
+        {
+            CreateEnemy("Forge_Scie_Folle", "Scie-Folle", path[1] + new Vector3(0f, 0.35f, 2.2f), MorphoriaAbility.Break, stoneMat, parent, Vector3.right);
+            CreateEnemy("Forge_Aimant_Lame", "Aimant-Lame", path[3] + new Vector3(0f, 0.35f, -2.2f), MorphoriaAbility.Fold, paperMat, parent, Vector3.forward);
+        }
+        else if (level.worldId == "fortress")
+        {
+            CreateEnemy("Forteresse_Picboule", "Picboule", path[1] + new Vector3(0f, 0.35f, -2.3f), MorphoriaAbility.Break, stoneMat, parent, Vector3.forward);
+            CreateEnemy("Forteresse_Flottevent", "Flottevent", path[2] + new Vector3(0f, 1.35f, 2.4f), MorphoriaAbility.Glide, leafMat, parent, Vector3.right, 2.0f, 1.3f, 0.32f);
+            CreateEnemy("Forteresse_Tache_Encre", "Tache-Encre", path[3] + new Vector3(0f, 0.35f, -2.35f), MorphoriaAbility.Fold, paperMat, parent, Vector3.forward);
+            CreateEnemy("Forteresse_Roncivore", "Roncivore", path[4] + new Vector3(0f, 0.35f, 2.35f), MorphoriaAbility.Cut, scissorsMat, parent, Vector3.right);
+        }
+        else
+        {
+            CreateEnemy("Ecloria_Picboule", "Picboule", path[1] + new Vector3(0f, 0.35f, -2.2f), MorphoriaAbility.Break, stoneMat, parent, Vector3.forward);
+            CreateEnemy("Ecloria_Roncivore", "Roncivore", path[3] + new Vector3(0f, 0.35f, 2.2f), MorphoriaAbility.Cut, scissorsMat, parent, Vector3.right);
+        }
+    }
+
+    private static MorphoriaEnemy CreateEnemy(string objectName, string displayName, Vector3 position, MorphoriaAbility weakness, Material themeMaterial, Transform parent, Vector3 patrolAxis, float speed = 1.55f, float patrolDistance = 1.7f, float hover = 0.08f)
+    {
+        GameObject root = new GameObject(objectName);
+        root.transform.SetParent(parent, false);
+        root.transform.position = position;
+
+        SphereCollider trigger = root.AddComponent<SphereCollider>();
+        trigger.isTrigger = true;
+        trigger.radius = weakness == MorphoriaAbility.Glide ? 1.25f : 1.05f;
+        trigger.center = new Vector3(0f, 0.75f, 0f);
+
+        MorphoriaEnemy enemy = root.AddComponent<MorphoriaEnemy>();
+        enemy.displayName = displayName;
+        enemy.weakness = weakness;
+        enemy.moveSpeed = speed;
+        enemy.patrolDistance = patrolDistance;
+        enemy.hoverAmplitude = hover;
+        enemy.patrolAxis = patrolAxis;
+
+        BuildEnemyVisual(displayName, weakness, themeMaterial, root.transform);
+        enemy.renderers = root.GetComponentsInChildren<Renderer>();
+        return enemy;
+    }
+
+    private static void BuildEnemyVisual(string displayName, MorphoriaAbility weakness, Material themeMaterial, Transform parent)
+    {
+        Material core = weakness == MorphoriaAbility.Break ? darkRockMat : themeMaterial;
+        Material accent = WeaknessMaterial(weakness);
+
+        if (displayName == "Flottevent")
+        {
+            CreateEnemyPart("body", PrimitiveType.Sphere, new Vector3(0f, 0.9f, 0f), new Vector3(0.62f, 0.62f, 0.62f), core, parent);
+            CreateEnemyPart("left_wing", PrimitiveType.Cube, new Vector3(-0.72f, 0.9f, 0f), new Vector3(0.16f, 0.72f, 0.9f), accent, parent).transform.localRotation = Quaternion.Euler(0f, -18f, 0f);
+            CreateEnemyPart("right_wing", PrimitiveType.Cube, new Vector3(0.72f, 0.9f, 0f), new Vector3(0.16f, 0.72f, 0.9f), accent, parent).transform.localRotation = Quaternion.Euler(0f, 18f, 0f);
+            CreateEnemyPart("wind_eye", PrimitiveType.Sphere, new Vector3(0f, 1f, -0.42f), new Vector3(0.16f, 0.16f, 0.08f), prismMat, parent);
+        }
+        else if (displayName == "Roncivore")
+        {
+            CreateEnemyPart("stem", PrimitiveType.Capsule, new Vector3(0f, 0.7f, 0f), new Vector3(0.42f, 0.78f, 0.42f), leafMat, parent);
+            CreateEnemyPart("jaw_left", PrimitiveType.Cube, new Vector3(-0.32f, 1.2f, -0.1f), new Vector3(0.48f, 0.18f, 0.55f), accent, parent).transform.localRotation = Quaternion.Euler(0f, 0f, 22f);
+            CreateEnemyPart("jaw_right", PrimitiveType.Cube, new Vector3(0.32f, 1.2f, -0.1f), new Vector3(0.48f, 0.18f, 0.55f), accent, parent).transform.localRotation = Quaternion.Euler(0f, 0f, -22f);
+            CreateEnemyPart("thorn", PrimitiveType.Cube, new Vector3(0f, 1.5f, -0.1f), new Vector3(0.18f, 0.42f, 0.18f), dangerMat, parent).transform.localRotation = Quaternion.Euler(0f, 0f, 45f);
+        }
+        else if (displayName == "Tache-Encre" || displayName == "Aimant-Lame")
+        {
+            CreateEnemyPart("ink_core", PrimitiveType.Sphere, new Vector3(0f, 0.62f, 0f), new Vector3(0.74f, 0.48f, 0.74f), darkRockMat, parent);
+            CreateEnemyPart("rune_bar", PrimitiveType.Cube, new Vector3(0f, 0.95f, -0.5f), new Vector3(0.58f, 0.08f, 0.06f), accent, parent);
+            CreateEnemyPart("rune_dot", PrimitiveType.Sphere, new Vector3(0f, 1.13f, -0.5f), new Vector3(0.16f, 0.16f, 0.07f), accent, parent);
+        }
+        else if (displayName == "Papier-Masque")
+        {
+            CreateEnemyPart("mask_body", PrimitiveType.Cube, new Vector3(0f, 0.85f, 0f), new Vector3(0.82f, 0.92f, 0.18f), paperMat, parent);
+            CreateEnemyPart("mask_blade_left", PrimitiveType.Cube, new Vector3(-0.5f, 0.9f, -0.03f), new Vector3(0.18f, 0.72f, 0.16f), accent, parent).transform.localRotation = Quaternion.Euler(0f, 0f, -28f);
+            CreateEnemyPart("mask_blade_right", PrimitiveType.Cube, new Vector3(0.5f, 0.9f, -0.03f), new Vector3(0.18f, 0.72f, 0.16f), accent, parent).transform.localRotation = Quaternion.Euler(0f, 0f, 28f);
+        }
+        else
+        {
+            CreateEnemyPart("body", PrimitiveType.Sphere, new Vector3(0f, 0.78f, 0f), new Vector3(0.72f, 0.72f, 0.72f), core, parent);
+            CreateEnemyPart("weakness_core", PrimitiveType.Cube, new Vector3(0f, 1.18f, -0.5f), new Vector3(0.28f, 0.28f, 0.08f), accent, parent).transform.localRotation = Quaternion.Euler(0f, 0f, 45f);
+            CreateEnemyPart("spike_left", PrimitiveType.Cube, new Vector3(-0.56f, 0.82f, 0f), new Vector3(0.24f, 0.24f, 0.24f), dangerMat, parent).transform.localRotation = Quaternion.Euler(0f, 0f, 45f);
+            CreateEnemyPart("spike_right", PrimitiveType.Cube, new Vector3(0.56f, 0.82f, 0f), new Vector3(0.24f, 0.24f, 0.24f), dangerMat, parent).transform.localRotation = Quaternion.Euler(0f, 0f, 45f);
+        }
+
+        Light light = parent.gameObject.AddComponent<Light>();
+        light.type = LightType.Point;
+        light.color = WeaknessColor(weakness);
+        light.range = 3.8f;
+        light.intensity = 0.9f;
+    }
+
+    private static GameObject CreateEnemyPart(string name, PrimitiveType primitive, Vector3 position, Vector3 scale, Material material, Transform parent)
+    {
+        GameObject part = GameObject.CreatePrimitive(primitive);
+        part.name = name;
+        part.transform.SetParent(parent, false);
+        part.transform.localPosition = position;
+        part.transform.localScale = scale;
+        Renderer renderer = part.GetComponent<Renderer>();
+        renderer.sharedMaterial = material;
+        DestroyColliderImmediate(part);
+        return part;
+    }
+
+    private static Material WeaknessMaterial(MorphoriaAbility weakness)
+    {
+        switch (weakness)
+        {
+            case MorphoriaAbility.Break:
+            case MorphoriaAbility.PushHeavy:
+            case MorphoriaAbility.ResistWind:
+                return stoneMat;
+            case MorphoriaAbility.Glide:
+                return leafMat;
+            case MorphoriaAbility.Fold:
+                return paperMat;
+            case MorphoriaAbility.Cut:
+                return scissorsMat;
+            default:
+                return prismMat;
+        }
+    }
+
+    private static Color WeaknessColor(MorphoriaAbility weakness)
+    {
+        return WeaknessMaterial(weakness).color;
     }
 
     private static void CreateAdventureCages(MorphoriaLevelInfo level, MiniBoss boss, Transform parent)
