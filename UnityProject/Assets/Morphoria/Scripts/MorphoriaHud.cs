@@ -22,6 +22,16 @@ namespace Morphoria
         private Transform guideTarget;
         private string guideLabel = string.Empty;
         private float nextGuideRefresh;
+        private int lastVillagers = -1;
+        private int lastBossHealth = -1;
+        private bool lastBossDefeated;
+        private string objectivePulse = string.Empty;
+        private float objectivePulseUntil;
+
+        private void Update()
+        {
+            TrackProgress();
+        }
 
         private void OnGUI()
         {
@@ -59,7 +69,7 @@ namespace Morphoria
 
             DrawPanel(new Rect(Screen.width - 318f, 18f, 300f, 86f), form.accent);
             GUI.Label(new Rect(Screen.width - 300f, 30f, 260f, 26f), "Objectif", titleStyle);
-            GUI.Label(new Rect(Screen.width - 300f, 62f, 260f, 26f), objective, labelStyle);
+            GUI.Label(new Rect(Screen.width - 300f, 62f, 260f, 26f), CurrentObjective(), labelStyle);
             DrawGuideMarker(form);
 
             string feedback = player.FeedbackText;
@@ -69,6 +79,8 @@ namespace Morphoria
                 DrawPanel(rect, form.accent);
                 GUI.Label(new Rect(rect.x + 18f, rect.y + 13f, rect.width - 36f, 24f), feedback, titleStyle);
             }
+
+            DrawObjectivePulse(form, Mathf.Max(128f, Screen.height - 190f));
 
             string prompt = player.InteractionPrompt;
             if (!string.IsNullOrEmpty(prompt))
@@ -135,6 +147,93 @@ namespace Morphoria
             GUI.color = new Color(accent.r, accent.g, accent.b, 0.95f);
             GUI.DrawTexture(new Rect(rect.x, rect.y, rect.width, 3f), Texture2D.whiteTexture);
             GUI.color = old;
+        }
+
+        private void DrawObjectivePulse(FormDefinition form, float y)
+        {
+            if (string.IsNullOrEmpty(objectivePulse) || Time.unscaledTime > objectivePulseUntil)
+            {
+                return;
+            }
+
+            Rect rect = new Rect(Screen.width * 0.5f - 190f, y, 380f, 42f);
+            DrawPanel(rect, form.accent);
+            GUI.Label(new Rect(rect.x + 18f, rect.y + 9f, rect.width - 36f, 24f), objectivePulse, promptStyle);
+        }
+
+        private string CurrentObjective()
+        {
+            if (!showLevelGoals || player == null)
+            {
+                return objective;
+            }
+
+            if (targetVillagers > 0)
+            {
+                if (miniBoss != null && !miniBoss.IsDefeated)
+                {
+                    return miniBoss.UsesWeaknessSequence ? "Affrontez Noctar" : "Battez le Garde-Cage";
+                }
+
+                if (player.Inventory.VillagersSaved < targetVillagers)
+                {
+                    return "Liberez les villageois";
+                }
+            }
+
+            return "Rejoignez le portail";
+        }
+
+        private void TrackProgress()
+        {
+            if (player == null || !showLevelGoals)
+            {
+                return;
+            }
+
+            PlayerInventory inventory = player.Inventory;
+            if (lastVillagers < 0)
+            {
+                lastVillagers = inventory.VillagersSaved;
+                lastBossHealth = miniBoss != null ? miniBoss.Health : -1;
+                lastBossDefeated = miniBoss == null || miniBoss.IsDefeated;
+                return;
+            }
+
+            if (miniBoss != null)
+            {
+                if (!lastBossDefeated && miniBoss.IsDefeated)
+                {
+                    AnnounceObjective(miniBoss.UsesWeaknessSequence ? "Noctar vaincu" : "Cages accessibles");
+                }
+                else if (!miniBoss.IsDefeated && lastBossHealth >= 0 && miniBoss.Health < lastBossHealth)
+                {
+                    AnnounceObjective(miniBoss.UsesWeaknessSequence ? "Rune suivante" : "Garde-Cage touche");
+                }
+
+                lastBossHealth = miniBoss.Health;
+                lastBossDefeated = miniBoss.IsDefeated;
+            }
+
+            if (inventory.VillagersSaved != lastVillagers)
+            {
+                if (inventory.VillagersSaved >= targetVillagers)
+                {
+                    AnnounceObjective("Portail ouvert");
+                }
+                else
+                {
+                    AnnounceObjective("Villageois " + inventory.VillagersSaved + " / " + targetVillagers);
+                }
+
+                lastVillagers = inventory.VillagersSaved;
+            }
+        }
+
+        private void AnnounceObjective(string text)
+        {
+            objectivePulse = text;
+            objectivePulseUntil = Time.unscaledTime + 2.6f;
         }
 
         private void EnsureStyles()

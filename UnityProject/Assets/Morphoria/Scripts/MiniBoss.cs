@@ -154,7 +154,7 @@ namespace Morphoria
                 defeated = true;
                 MorphoriaFeedbackSystem.GetOrCreate().Play(MorphoriaFeedbackCue.BossDefeated, transform.position + Vector3.up, new Color(0.78f, 0.42f, 1f), 1f);
                 gameObject.SetActive(false);
-                player.ShowFeedback("Garde-Cage vaincu");
+                player.ShowFeedback(HasWeaknessSequence() ? "Noctar vaincu" : "Garde-Cage vaincu");
             }
         }
 

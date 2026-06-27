@@ -24,7 +24,8 @@ namespace Morphoria
 
             if (player.Inventory.VillagersSaved < requiredVillagers)
             {
-                player.ShowFeedback("Villageois restants");
+                int missing = Mathf.Max(0, requiredVillagers - player.Inventory.VillagersSaved);
+                player.ShowFeedback(missing == 1 ? "1 villageois restant" : missing + " villageois restants");
                 MorphoriaFeedbackSystem.GetOrCreate().Play(MorphoriaFeedbackCue.Denied, transform.position + Vector3.up, Color.red, 0.45f);
                 return;
             }
