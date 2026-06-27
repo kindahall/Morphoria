@@ -1,0 +1,29 @@
+# Unity
+UnityProject/Library/
+UnityProject/Temp/
+UnityProject/Obj/
+UnityProject/Build/
+UnityProject/Builds/
+UnityProject/Logs/
+UnityProject/UserSettings/
+UnityProject/MemoryCaptures/
+
+# Generated assets
+generated_assets/videos/
+generated_assets/models_3d/
+generated_assets/animations/
+
+# Original local drop folder; canonical copies live in references/, 08_Assets/, and UnityProject/.
+Assets idea/
+prompt_maitre_jeu_3d_pierre_feuille_papier_ciseaux.md
+
+# OS / editors
+.DS_Store
+__pycache__/
+*.py[cod]
+*.swp
+*.swo
+
+# Secrets
+.env
+*.env

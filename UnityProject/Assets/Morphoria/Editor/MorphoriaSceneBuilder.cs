@@ -1,0 +1,544 @@
+using System;
+using System.IO;
+using Morphoria;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.SceneManagement;
+
+public static class MorphoriaSceneBuilder
+{
+    private const string ScenePath = "Assets/Morphoria/Scenes/LePontDesQuatreFormes.unity";
+    private const string MaterialFolder = "Assets/Morphoria/Materials";
+
+    private static Material stoneMat;
+    private static Material leafMat;
+    private static Material paperMat;
+    private static Material scissorsMat;
+    private static Material neutralMat;
+    private static Material darkRockMat;
+    private static Material goldMat;
+    private static Material prismMat;
+    private static Material crystalMat;
+    private static Material windMat;
+    private static Material dangerMat;
+
+    [InitializeOnLoadMethod]
+    private static void AutoBuildOnFirstOpen()
+    {
+        EditorApplication.delayCall += () =>
+        {
+            string absoluteScenePath = Path.Combine(Directory.GetCurrentDirectory(), ScenePath);
+            if (!Application.isBatchMode && !File.Exists(absoluteScenePath))
+            {
+                BuildVerticalSliceScene();
+            }
+        };
+    }
+
+    [MenuItem("Morphoria/Build Vertical Slice Scene")]
+    public static void BuildVerticalSliceScene()
+    {
+        EnsureFolders();
+        CreateMaterials();
+
+        Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        scene.name = "Le Pont des Quatre Formes";
+
+        RenderSettings.ambientLight = new Color(0.48f, 0.55f, 0.68f);
+        RenderSettings.fog = true;
+        RenderSettings.fogColor = new Color(0.55f, 0.72f, 0.92f);
+        RenderSettings.fogDensity = 0.0085f;
+
+        Transform root = new GameObject("Morphoria_VerticalSlice").transform;
+        Transform environment = new GameObject("Floating_Islands_And_Path").transform;
+        Transform obstacles = new GameObject("Form_Obstacles").transform;
+        Transform collectibles = new GameObject("Collectibles_50_Golden_5_Prism").transform;
+        Transform cages = new GameObject("Villager_Cages").transform;
+        environment.SetParent(root);
+        obstacles.SetParent(root);
+        collectibles.SetParent(root);
+        cages.SetParent(root);
+
+        CreateLighting();
+        MorphoriaPlayer player = CreatePlayer();
+        Camera camera = CreateCamera(player.transform);
+        player.mainCamera = camera;
+        MorphoriaHud hud = CreateHud(player);
+
+        Vector3[] path =
+        {
+            new Vector3(-36f, 1.1f, 0f),
+            new Vector3(-24f, 1.1f, 0f),
+            new Vector3(-11f, 3.15f, 4f),
+            new Vector3(3f, 1.1f, 0f),
+            new Vector3(17f, 1.1f, -3f),
+            new Vector3(31f, 1.1f, 0f),
+            new Vector3(45f, 1.1f, 0f),
+            new Vector3(58f, 1.1f, 2f)
+        };
+
+        CreateIsland("Depart_Ecloria", new Vector3(-36f, 0f, 0f), new Vector3(8f, 1f, 8f), neutralMat, environment);
+        CreateIsland("Zone_Pierre_Rokko", new Vector3(-24f, 0f, 0f), new Vector3(12f, 1f, 8f), stoneMat, environment);
+        CreateIsland("Zone_Feuille_Luma", new Vector3(-11f, 2f, 4f), new Vector3(13f, 1f, 8f), leafMat, environment);
+        CreateIsland("Zone_Papier_Papyra", new Vector3(3f, 0f, 0f), new Vector3(12f, 1f, 8f), paperMat, environment);
+        CreateIsland("Zone_Ciseaux_Cizo", new Vector3(17f, 0f, -3f), new Vector3(12f, 1f, 8f), scissorsMat, environment);
+        CreateIsland("Puzzle_Combine", new Vector3(31f, 0f, 0f), new Vector3(14f, 1f, 10f), neutralMat, environment);
+        CreateIsland("Arene_Garde_Cage", new Vector3(45f, 0f, 0f), new Vector3(15f, 1f, 12f), darkRockMat, environment);
+        CreateIsland("Sortie_Portail", new Vector3(58f, 0f, 2f), new Vector3(10f, 1f, 8f), neutralMat, environment);
+
+        CreateBridge("Pont_Depart_Pierre", new Vector3(-30f, 0.1f, 0f), new Vector3(6f, 0.3f, 2.4f), stoneMat, environment);
+        CreateBridge("Pont_Papier_Ciseaux", new Vector3(10f, 0.1f, -1.5f), new Vector3(7f, 0.3f, 2f), paperMat, environment);
+        CreateBridge("Pont_Ciseaux_Puzzle", new Vector3(24f, 0.1f, -1.5f), new Vector3(7f, 0.3f, 2f), scissorsMat, environment);
+        CreateBridge("Pont_Puzzle_Arene", new Vector3(38f, 0.1f, 0f), new Vector3(7f, 0.3f, 2.4f), neutralMat, environment);
+        CreateBridge("Pont_Arene_Sortie", new Vector3(51.5f, 0.1f, 1f), new Vector3(6f, 0.3f, 2.2f), crystalMat, environment);
+
+        GameObject fragileBridge = CreateBridge("Pont_Fragile_Evite_Rokko", new Vector3(-17.4f, 1.15f, 2.2f), new Vector3(5.8f, 0.26f, 2.1f), leafMat, environment);
+        fragileBridge.AddComponent<FragilePlatform>();
+        BoxCollider fragileTrigger = fragileBridge.AddComponent<BoxCollider>();
+        fragileTrigger.isTrigger = true;
+        fragileTrigger.size = new Vector3(1.02f, 2.2f, 1.02f);
+
+        GameObject origamiBridge = CreateBridge("Pont_Origami_Active_Par_Rune", new Vector3(6.5f, 0.1f, 2.9f), new Vector3(5f, 0.25f, 1.5f), paperMat, environment);
+        origamiBridge.SetActive(false);
+
+        GameObject puzzleGate = CreateGate("Porte_Puzzle_Pierre", new Vector3(35.7f, 1.35f, 0f), new Vector3(0.8f, 2.7f, 5.2f), stoneMat, obstacles);
+        GameObject cableGate = CreateGate("Barriere_Cable_Cizo", new Vector3(22f, 1.35f, -3f), new Vector3(0.8f, 2.7f, 4.2f), dangerMat, obstacles);
+
+        CreateAbilityObstacle("Mur_Fissure_Rokko", new Vector3(-25.6f, 1.4f, 0f), new Vector3(1.1f, 2.8f, 5f), stoneMat, MorphoriaAbility.Break, "Mur brise", obstacles);
+        CreateAbilityObstacle("Bloc_Lourd_Rokko", new Vector3(-21.2f, 1.0f, 2.25f), new Vector3(2.3f, 2f, 2.3f), stoneMat, MorphoriaAbility.PushHeavy, "Bloc deplace", obstacles);
+
+        CreateWindZone(new Vector3(-11f, 3.25f, 4.2f), new Vector3(5.4f, 4.8f, 5.4f), obstacles);
+        CreateBouncePad(new Vector3(-6.7f, 2.75f, 5.4f), obstacles);
+
+        CreateAbilityObstacle("Passage_Mince_Papyra", new Vector3(1.1f, 1.25f, 0f), new Vector3(0.75f, 2.5f, 5f), paperMat, MorphoriaAbility.Fold, "Passage ouvert", obstacles);
+        AbilityGate rune = CreateAbilityObstacle("Rune_Papier_Pont_Origami", new Vector3(5.3f, 0.68f, -1.75f), new Vector3(1.4f, 0.18f, 1.4f), prismMat, MorphoriaAbility.Fold, "Rune couverte", obstacles);
+        rune.destroyOnSuccess = false;
+        rune.activateOnSuccess = new[] { origamiBridge };
+
+        CreateAbilityObstacle("Liane_Cizo", new Vector3(15.2f, 1.75f, -3.1f), new Vector3(0.34f, 3.9f, 0.34f), leafMat, MorphoriaAbility.Cut, "Liane coupee", obstacles, true);
+        AbilityGate cable = CreateAbilityObstacle("Cable_Mecanique_Cizo", new Vector3(20.8f, 1.75f, -3.1f), new Vector3(0.28f, 4.8f, 0.28f), scissorsMat, MorphoriaAbility.Cut, "Cable coupe", obstacles, true);
+        cable.deactivateOnSuccess = new[] { cableGate };
+
+        CreateHeavyPlate(new Vector3(29.2f, 0.65f, 2.9f), puzzleGate, obstacles);
+        CreateWindZone(new Vector3(31.2f, 1.8f, -3.1f), new Vector3(4f, 3.3f, 3.2f), obstacles);
+        CreateAbilityObstacle("Rune_Puzzle_Papyra", new Vector3(32.8f, 0.68f, -2.6f), new Vector3(1.25f, 0.18f, 1.25f), prismMat, MorphoriaAbility.Fold, "Rune scellee", obstacles);
+        CreateAbilityObstacle("Filet_Final_Cizo", new Vector3(41.5f, 1.35f, 0f), new Vector3(0.8f, 2.7f, 4.5f), scissorsMat, MorphoriaAbility.Cut, "Filet ouvert", obstacles);
+
+        CreateCheckpoint(new Vector3(38.4f, 1.1f, 3.2f), root);
+        MiniBoss boss = CreateMiniBoss(new Vector3(45f, 1.2f, 0f), root);
+        hud.miniBoss = boss;
+
+        CreateVillagerCage("Cage_Rokko", new Vector3(43.2f, 1.25f, 4f), MorphoriaAbility.Break, boss, cages);
+        CreateVillagerCage("Cage_Luma", new Vector3(47f, 1.25f, 4f), MorphoriaAbility.Glide, boss, cages);
+        CreateVillagerCage("Cage_Papyra", new Vector3(43.2f, 1.25f, -4f), MorphoriaAbility.Fold, boss, cages);
+        CreateVillagerCage("Cage_Cizo", new Vector3(47f, 1.25f, -4f), MorphoriaAbility.Cut, boss, cages);
+
+        CreateExitPortal(new Vector3(58.5f, 1.1f, 2f), root);
+        CreateSectionLabels(root);
+        CreateDecor(root);
+        CreateStars(path, collectibles);
+        CreateChoiceStars(collectibles);
+
+        Selection.activeGameObject = player.gameObject;
+        EditorSceneManager.SaveScene(scene, ScenePath);
+        EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+    }
+
+    private static void EnsureFolders()
+    {
+        Directory.CreateDirectory("Assets/Morphoria/Art/References");
+        Directory.CreateDirectory("Assets/Morphoria/Data");
+        Directory.CreateDirectory("Assets/Morphoria/Editor");
+        Directory.CreateDirectory("Assets/Morphoria/Materials");
+        Directory.CreateDirectory("Assets/Morphoria/Prefabs");
+        Directory.CreateDirectory("Assets/Morphoria/Scenes");
+        Directory.CreateDirectory("Assets/Morphoria/Scripts");
+        Directory.CreateDirectory("Assets/Morphoria/Textures");
+    }
+
+    private static void CreateMaterials()
+    {
+        stoneMat = CreateMaterial("M_Stone_Rokko_Ocher", new Color(0.56f, 0.38f, 0.23f), new Color(1f, 0.52f, 0.1f));
+        leafMat = CreateMaterial("M_Leaf_Luma_Green", new Color(0.18f, 0.62f, 0.24f), new Color(0.86f, 1f, 0.28f));
+        paperMat = CreateMaterial("M_Paper_Papyra_Ivory", new Color(0.82f, 0.76f, 0.96f), new Color(0.55f, 0.34f, 0.9f));
+        scissorsMat = CreateMaterial("M_Scissors_Cizo_Steel", new Color(0.54f, 0.72f, 0.88f), new Color(0.08f, 0.65f, 1f));
+        neutralMat = CreateMaterial("M_Ecloria_Warm_Grass", new Color(0.34f, 0.58f, 0.34f), new Color(0.94f, 0.78f, 0.3f));
+        darkRockMat = CreateMaterial("M_Noctar_Arena_Dark", new Color(0.13f, 0.11f, 0.18f), new Color(0.62f, 0.22f, 1f));
+        goldMat = CreateMaterial("M_Golden_Star_Crystal", new Color(1f, 0.78f, 0.13f), new Color(1f, 0.88f, 0.28f));
+        prismMat = CreateMaterial("M_Prism_Star_Violet", new Color(0.58f, 0.28f, 1f), new Color(0.85f, 0.55f, 1f));
+        crystalMat = CreateMaterial("M_Crystal_Cage_Blue", new Color(0.25f, 0.78f, 1f, 0.62f), new Color(0.1f, 0.7f, 1f), true);
+        windMat = CreateMaterial("M_Wind_Cyan_Transparent", new Color(0.3f, 0.88f, 1f, 0.26f), new Color(0.35f, 0.95f, 1f), true);
+        dangerMat = CreateMaterial("M_Danger_Orange_Red", new Color(0.86f, 0.25f, 0.12f), new Color(1f, 0.45f, 0.08f));
+    }
+
+    private static Material CreateMaterial(string name, Color color, Color emission, bool transparent = false)
+    {
+        string path = MaterialFolder + "/" + name + ".mat";
+        Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+        if (material == null)
+        {
+            Shader shader = Shader.Find("Standard") ?? Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Diffuse");
+            material = new Material(shader);
+            AssetDatabase.CreateAsset(material, path);
+        }
+
+        material.color = color;
+        if (material.HasProperty("_EmissionColor"))
+        {
+            material.SetColor("_EmissionColor", emission * 0.45f);
+            material.EnableKeyword("_EMISSION");
+        }
+
+        if (transparent)
+        {
+            material.SetInt("_SrcBlend", (int)BlendMode.SrcAlpha);
+            material.SetInt("_DstBlend", (int)BlendMode.OneMinusSrcAlpha);
+            material.SetInt("_ZWrite", 0);
+            material.DisableKeyword("_ALPHATEST_ON");
+            material.EnableKeyword("_ALPHABLEND_ON");
+            material.renderQueue = (int)RenderQueue.Transparent;
+        }
+
+        EditorUtility.SetDirty(material);
+        return material;
+    }
+
+    private static void CreateLighting()
+    {
+        GameObject sun = new GameObject("Sun_Key_Light");
+        Light sunLight = sun.AddComponent<Light>();
+        sunLight.type = LightType.Directional;
+        sunLight.color = new Color(1f, 0.88f, 0.68f);
+        sunLight.intensity = 1.35f;
+        sun.transform.rotation = Quaternion.Euler(48f, -32f, 0f);
+
+        GameObject fill = new GameObject("Blue_Crystal_Fill");
+        Light fillLight = fill.AddComponent<Light>();
+        fillLight.type = LightType.Directional;
+        fillLight.color = new Color(0.48f, 0.76f, 1f);
+        fillLight.intensity = 0.45f;
+        fill.transform.rotation = Quaternion.Euler(20f, 130f, 0f);
+    }
+
+    private static MorphoriaPlayer CreatePlayer()
+    {
+        GameObject player = new GameObject("Player_Rokko_Luma_Papyra_Cizo");
+        player.transform.position = new Vector3(-36f, 2.1f, 0f);
+        CharacterController controller = player.AddComponent<CharacterController>();
+        controller.height = 2.3f;
+        controller.radius = 0.45f;
+        controller.center = new Vector3(0f, 1.08f, 0f);
+        player.AddComponent<PlayerInventory>();
+        player.AddComponent<MorphoriaAvatar>();
+        return player.AddComponent<MorphoriaPlayer>();
+    }
+
+    private static Camera CreateCamera(Transform target)
+    {
+        GameObject cameraObject = new GameObject("ThirdPersonCamera");
+        cameraObject.tag = "MainCamera";
+        Camera camera = cameraObject.AddComponent<Camera>();
+        camera.clearFlags = CameraClearFlags.SolidColor;
+        camera.backgroundColor = new Color(0.54f, 0.73f, 0.92f);
+        camera.fieldOfView = 58f;
+        ThirdPersonCamera controller = cameraObject.AddComponent<ThirdPersonCamera>();
+        controller.target = target;
+        cameraObject.transform.position = target.position + new Vector3(0f, 4f, -8f);
+        cameraObject.transform.LookAt(target.position + Vector3.up);
+        return camera;
+    }
+
+    private static MorphoriaHud CreateHud(MorphoriaPlayer player)
+    {
+        GameObject hud = new GameObject("HUD_Morphoria");
+        MorphoriaHud controller = hud.AddComponent<MorphoriaHud>();
+        controller.player = player;
+        controller.objective = "Liberez les villageois";
+        return controller;
+    }
+
+    private static GameObject CreateIsland(string name, Vector3 position, Vector3 scale, Material material, Transform parent)
+    {
+        GameObject top = CreateCube(name, position, scale, material, parent);
+        GameObject underside = CreateCube(name + "_floating_rock", position + new Vector3(0f, -0.78f, 0f), new Vector3(scale.x * 0.72f, 0.75f, scale.z * 0.72f), darkRockMat, parent);
+        underside.transform.rotation = Quaternion.Euler(0f, 14f, 0f);
+        return top;
+    }
+
+    private static GameObject CreateBridge(string name, Vector3 position, Vector3 scale, Material material, Transform parent)
+    {
+        GameObject bridge = CreateCube(name, position, scale, material, parent);
+        CreateCube(name + "_left_edge", position + new Vector3(0f, 0.23f, scale.z * 0.5f), new Vector3(scale.x, 0.18f, 0.12f), darkRockMat, parent);
+        CreateCube(name + "_right_edge", position + new Vector3(0f, 0.23f, -scale.z * 0.5f), new Vector3(scale.x, 0.18f, 0.12f), darkRockMat, parent);
+        return bridge;
+    }
+
+    private static GameObject CreateGate(string name, Vector3 position, Vector3 scale, Material material, Transform parent)
+    {
+        GameObject gate = CreateCube(name, position, scale, material, parent);
+        return gate;
+    }
+
+    private static AbilityGate CreateAbilityObstacle(string name, Vector3 position, Vector3 scale, Material material, MorphoriaAbility ability, string success, Transform parent, bool cylinder = false)
+    {
+        GameObject obstacle = cylinder
+            ? CreateCylinder(name, position, scale, material, parent, Quaternion.Euler(0f, 0f, 90f))
+            : CreateCube(name, position, scale, material, parent);
+
+        AbilityGate gate = obstacle.AddComponent<AbilityGate>();
+        gate.requiredAbility = ability;
+        gate.successMessage = success;
+        return gate;
+    }
+
+    private static void CreateWindZone(Vector3 position, Vector3 scale, Transform parent)
+    {
+        GameObject wind = CreateCube("Courant_Air_Luma", position, scale, windMat, parent);
+        Collider collider = wind.GetComponent<Collider>();
+        collider.isTrigger = true;
+        WindZone zone = wind.AddComponent<WindZone>();
+        zone.windVelocity = new Vector3(0f, 18f, 2.5f);
+    }
+
+    private static void CreateBouncePad(Vector3 position, Transform parent)
+    {
+        GameObject pad = CreateCylinder("Fleur_Rebondissante_Luma", position, new Vector3(1.2f, 0.16f, 1.2f), leafMat, parent, Quaternion.identity);
+        Collider collider = pad.GetComponent<Collider>();
+        collider.isTrigger = true;
+        pad.AddComponent<BouncePad>();
+        CreateCube("Fleur_Petales_Luma", position + Vector3.up * 0.18f, new Vector3(2.1f, 0.08f, 0.45f), goldMat, parent).transform.rotation = Quaternion.Euler(0f, 45f, 0f);
+        CreateCube("Fleur_Petales_Luma_B", position + Vector3.up * 0.2f, new Vector3(0.45f, 0.08f, 2.1f), goldMat, parent).transform.rotation = Quaternion.Euler(0f, 45f, 0f);
+    }
+
+    private static void CreateHeavyPlate(Vector3 position, GameObject targetGate, Transform parent)
+    {
+        GameObject plate = CreateCylinder("Bouton_Pression_Rokko", position, new Vector3(1.4f, 0.08f, 1.4f), stoneMat, parent, Quaternion.identity);
+        Collider collider = plate.GetComponent<Collider>();
+        collider.isTrigger = true;
+        HeavyPressurePlate pressurePlate = plate.AddComponent<HeavyPressurePlate>();
+        pressurePlate.deactivateOnPress = new[] { targetGate };
+        pressurePlate.message = "Porte ouverte";
+    }
+
+    private static void CreateCheckpoint(Vector3 position, Transform parent)
+    {
+        GameObject checkpoint = CreateCylinder("Checkpoint_Cristal", position, new Vector3(0.9f, 0.7f, 0.9f), crystalMat, parent, Quaternion.identity);
+        Collider collider = checkpoint.GetComponent<Collider>();
+        collider.isTrigger = true;
+        checkpoint.AddComponent<Checkpoint>();
+        Light light = checkpoint.AddComponent<Light>();
+        light.type = LightType.Point;
+        light.color = new Color(0.2f, 0.75f, 1f);
+        light.range = 7f;
+        light.intensity = 2.2f;
+    }
+
+    private static MiniBoss CreateMiniBoss(Vector3 position, Transform parent)
+    {
+        GameObject boss = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+        boss.name = "MiniBoss_Garde_Cage";
+        boss.transform.SetParent(parent, false);
+        boss.transform.position = position;
+        boss.transform.localScale = new Vector3(1.4f, 1.55f, 1.4f);
+        boss.GetComponent<Renderer>().sharedMaterial = darkRockMat;
+        Collider collider = boss.GetComponent<Collider>();
+        collider.isTrigger = true;
+
+        MiniBoss miniBoss = boss.AddComponent<MiniBoss>();
+        miniBoss.maxHealth = 4;
+        miniBoss.renderers = boss.GetComponentsInChildren<Renderer>();
+        miniBoss.patrolPoints = new[]
+        {
+            CreateMarker("Boss_Patrol_A", new Vector3(41.5f, 1.05f, -3.5f), parent),
+            CreateMarker("Boss_Patrol_B", new Vector3(48.5f, 1.05f, 3.5f), parent)
+        };
+
+        CreateCube("Garde_Cage_Cadenas", new Vector3(0f, 1.2f, -0.75f), new Vector3(0.75f, 0.55f, 0.22f), prismMat, boss.transform);
+        return miniBoss;
+    }
+
+    private static void CreateVillagerCage(string name, Vector3 position, MorphoriaAbility ability, MiniBoss boss, Transform parent)
+    {
+        GameObject root = new GameObject(name);
+        root.transform.SetParent(parent, false);
+        root.transform.position = position;
+        SphereCollider trigger = root.AddComponent<SphereCollider>();
+        trigger.isTrigger = true;
+        trigger.radius = 1.5f;
+
+        GameObject cageVisual = CreateCube(name + "_crystal_cage", Vector3.zero, new Vector3(1.45f, 1.8f, 1.45f), crystalMat, root.transform);
+        cageVisual.transform.localPosition = Vector3.up * 0.95f;
+        CreateCube(name + "_lock", new Vector3(0f, 0f, -0.78f), new Vector3(0.42f, 0.42f, 0.18f), prismMat, cageVisual.transform);
+
+        GameObject villager = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        villager.name = name + "_villager";
+        villager.transform.SetParent(root.transform, false);
+        villager.transform.localPosition = new Vector3(0f, 0.75f, 0f);
+        villager.transform.localScale = new Vector3(0.65f, 0.65f, 0.65f);
+        villager.GetComponent<Renderer>().sharedMaterial = goldMat;
+        UnityEngine.Object.DestroyImmediate(villager.GetComponent<Collider>());
+        villager.SetActive(false);
+
+        VillagerCage cage = root.AddComponent<VillagerCage>();
+        cage.requiredAbility = ability;
+        cage.boss = boss;
+        cage.cageVisual = cageVisual;
+        cage.villagerVisual = villager;
+    }
+
+    private static void CreateExitPortal(Vector3 position, Transform parent)
+    {
+        GameObject trigger = new GameObject("Portail_Sortie");
+        trigger.transform.SetParent(parent, false);
+        trigger.transform.position = position;
+        BoxCollider collider = trigger.AddComponent<BoxCollider>();
+        collider.isTrigger = true;
+        collider.size = new Vector3(3.2f, 4f, 1.2f);
+        trigger.AddComponent<LevelExit>();
+
+        CreateCylinder("Portail_Sortie_Anneau_A", position + Vector3.up * 1.6f, new Vector3(1.6f, 0.08f, 1.6f), crystalMat, parent, Quaternion.Euler(90f, 0f, 0f));
+        CreateCylinder("Portail_Sortie_Anneau_B", position + Vector3.up * 1.6f, new Vector3(2.05f, 0.05f, 2.05f), prismMat, parent, Quaternion.Euler(90f, 0f, 0f));
+        Light light = trigger.AddComponent<Light>();
+        light.type = LightType.Point;
+        light.color = new Color(0.18f, 0.68f, 1f);
+        light.range = 9f;
+        light.intensity = 3f;
+    }
+
+    private static void CreateSectionLabels(Transform parent)
+    {
+        CreateLabel("DEPART", new Vector3(-36f, 1.1f, -3.6f), neutralMat.color, parent);
+        CreateLabel("PIERRE", new Vector3(-24f, 1.1f, -3.6f), stoneMat.color, parent);
+        CreateLabel("FEUILLE", new Vector3(-11f, 3.1f, 0.6f), leafMat.color, parent);
+        CreateLabel("PAPIER", new Vector3(3f, 1.1f, -3.6f), paperMat.color, parent);
+        CreateLabel("CISEAUX", new Vector3(17f, 1.1f, -6.6f), scissorsMat.color, parent);
+        CreateLabel("PUZZLE", new Vector3(31f, 1.1f, -4.6f), goldMat.color, parent);
+        CreateLabel("CAGES", new Vector3(45f, 1.1f, -5.3f), prismMat.color, parent);
+        CreateLabel("SORTIE", new Vector3(58f, 1.1f, -1.7f), crystalMat.color, parent);
+    }
+
+    private static void CreateLabel(string text, Vector3 position, Color color, Transform parent)
+    {
+        GameObject label = new GameObject("Label_" + text);
+        label.transform.SetParent(parent, false);
+        label.transform.position = position;
+        label.transform.rotation = Quaternion.Euler(68f, 0f, 0f);
+        TextMesh mesh = label.AddComponent<TextMesh>();
+        mesh.text = text;
+        mesh.anchor = TextAnchor.MiddleCenter;
+        mesh.alignment = TextAlignment.Center;
+        mesh.characterSize = 0.34f;
+        mesh.fontSize = 54;
+        mesh.color = Color.Lerp(color, Color.white, 0.25f);
+    }
+
+    private static void CreateDecor(Transform parent)
+    {
+        for (int i = 0; i < 18; i++)
+        {
+            float t = i / 17f;
+            Vector3 position = Vector3.Lerp(new Vector3(-35f, 0.6f, 4f), new Vector3(58f, 0.6f, 5f), t);
+            position.z += Mathf.Sin(i * 1.7f) * 2.2f;
+            Material material = i % 3 == 0 ? prismMat : crystalMat;
+            GameObject crystal = CreateCube("Decor_Crystal_" + i, position + Vector3.up * UnityEngine.Random.Range(0.05f, 0.5f), new Vector3(0.34f, UnityEngine.Random.Range(0.9f, 1.8f), 0.34f), material, parent);
+            crystal.transform.rotation = Quaternion.Euler(0f, i * 29f, 45f);
+        }
+
+        CreateCube("Village_Coeur_Prismatique_Rappel", new Vector3(-38.5f, 1.2f, 3.1f), new Vector3(0.8f, 1.25f, 0.8f), prismMat, parent).transform.rotation = Quaternion.Euler(0f, 22f, 45f);
+    }
+
+    private static void CreateStars(Vector3[] path, Transform parent)
+    {
+        int created = 0;
+        for (int i = 0; i < path.Length - 1 && created < 50; i++)
+        {
+            int count = i == path.Length - 2 ? 8 : 7;
+            for (int j = 0; j < count && created < 50; j++)
+            {
+                float t = (j + 1f) / (count + 1f);
+                Vector3 position = Vector3.Lerp(path[i], path[i + 1], t);
+                position.y += 0.55f + Mathf.Sin((created + 1) * 0.9f) * 0.18f;
+                position.z += Mathf.Sin(created * 1.3f) * 0.8f;
+                CreateStar("GoldenStar_" + (created + 1).ToString("00"), position, CollectibleKind.GoldenStar, goldMat, parent);
+                created++;
+            }
+        }
+    }
+
+    private static void CreateChoiceStars(Transform parent)
+    {
+        CreateStar("ChoiceStar_Pierre", new Vector3(-20f, 1.7f, -2.7f), CollectibleKind.ChoiceStar, prismMat, parent);
+        CreateStar("ChoiceStar_Feuille", new Vector3(-8f, 4.1f, 6.4f), CollectibleKind.ChoiceStar, prismMat, parent);
+        CreateStar("ChoiceStar_Papier", new Vector3(7.7f, 1.7f, 2.7f), CollectibleKind.ChoiceStar, prismMat, parent);
+        CreateStar("ChoiceStar_Ciseaux", new Vector3(21f, 1.7f, -5.3f), CollectibleKind.ChoiceStar, prismMat, parent);
+        CreateStar("ChoiceStar_Arene", new Vector3(45f, 2.2f, 0f), CollectibleKind.ChoiceStar, prismMat, parent);
+    }
+
+    private static void CreateStar(string name, Vector3 position, CollectibleKind kind, Material material, Transform parent)
+    {
+        GameObject star = new GameObject(name);
+        star.transform.SetParent(parent, false);
+        star.transform.position = position;
+        star.transform.rotation = Quaternion.Euler(0f, 25f, 45f);
+
+        SphereCollider collider = star.AddComponent<SphereCollider>();
+        collider.isTrigger = true;
+        collider.radius = 0.55f;
+
+        MorphoriaCollectible collectible = star.AddComponent<MorphoriaCollectible>();
+        collectible.kind = kind;
+
+        GameObject diamondA = CreateCube(name + "_Facet_A", Vector3.zero, new Vector3(0.24f, 0.74f, 0.24f), material, star.transform);
+        diamondA.transform.localRotation = Quaternion.Euler(45f, 0f, 45f);
+        GameObject diamondB = CreateCube(name + "_Facet_B", Vector3.zero, new Vector3(0.18f, 0.5f, 0.18f), material, star.transform);
+        diamondB.transform.localRotation = Quaternion.Euler(-35f, 62f, 25f);
+        DestroyColliderImmediate(diamondA);
+        DestroyColliderImmediate(diamondB);
+    }
+
+    private static GameObject CreateCube(string name, Vector3 position, Vector3 scale, Material material, Transform parent)
+    {
+        GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        cube.name = name;
+        cube.transform.SetParent(parent, false);
+        cube.transform.localPosition = position;
+        cube.transform.localScale = scale;
+        Renderer renderer = cube.GetComponent<Renderer>();
+        renderer.sharedMaterial = material;
+        return cube;
+    }
+
+    private static GameObject CreateCylinder(string name, Vector3 position, Vector3 scale, Material material, Transform parent, Quaternion rotation)
+    {
+        GameObject cylinder = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        cylinder.name = name;
+        cylinder.transform.SetParent(parent, false);
+        cylinder.transform.localPosition = position;
+        cylinder.transform.localRotation = rotation;
+        cylinder.transform.localScale = scale;
+        Renderer renderer = cylinder.GetComponent<Renderer>();
+        renderer.sharedMaterial = material;
+        return cylinder;
+    }
+
+    private static Transform CreateMarker(string name, Vector3 position, Transform parent)
+    {
+        GameObject marker = new GameObject(name);
+        marker.transform.SetParent(parent, false);
+        marker.transform.position = position;
+        return marker.transform;
+    }
+
+    private static void DestroyColliderImmediate(GameObject gameObject)
+    {
+        Collider collider = gameObject.GetComponent<Collider>();
+        if (collider != null)
+        {
+            UnityEngine.Object.DestroyImmediate(collider);
+        }
+    }
+}

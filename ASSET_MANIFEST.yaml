@@ -1,0 +1,84 @@
+characters:
+  - id: rokko
+    display_name: Rokko
+    form: pierre
+    type: character_3d
+    reference_image: references/concept_cards/file_000000001f987246ac460fb1633689ad.png
+    output_glb: generated_assets/models_3d/characters/rokko.glb
+    output_image: generated_assets/images/characters/rokko_concept.png
+    prompt: >
+      Rokko, small heroic rock guardian for Morphoria, premium cartoon 3D
+      platformer style, bulky stone body, green scarf, amber glowing cracks,
+      expressive golden eyes, readable heavy silhouette, game-ready character.
+
+  - id: luma
+    display_name: Luma
+    form: feuille
+    type: character_3d
+    reference_image: references/concept_cards/file_000000003694724392741983104f6b3c.png
+    output_glb: generated_assets/models_3d/characters/luma.glb
+    output_image: generated_assets/images/characters/luma_concept.png
+    prompt: >
+      Luma, small leaf guardian for Morphoria, cute heroic 3D platformer
+      character, green and yellow palette, leaf wings, orange scarf, expressive
+      eyes, agile pose, premium cartoon game-ready model.
+
+  - id: papyra
+    display_name: Papyra
+    form: papier
+    type: character_3d
+    reference_image: references/concept_cards/file_000000004de871f49f852df18f3af855.png
+    output_glb: generated_assets/models_3d/characters/papyra.glb
+    output_image: generated_assets/images/characters/papyra_concept.png
+    prompt: >
+      Papyra, small origami paper guardian for Morphoria, ivory and violet
+      folded paper armor, magical runes, elegant folded silhouette, expressive
+      face, premium cartoon 3D platformer style.
+
+  - id: cizo
+    display_name: Cizo
+    form: ciseaux
+    type: character_3d
+    reference_image: references/concept_cards/file_00000000604c7243a407b82dedcc6dc2.png
+    output_glb: generated_assets/models_3d/characters/cizo.glb
+    output_image: generated_assets/images/characters/cizo_concept.png
+    prompt: >
+      Cizo, small scissors guardian for Morphoria, silver and blue armor,
+      blade arms, fast heroic pose, orange spark accents, expressive eyes,
+      premium cartoon 3D platformer game-ready character.
+
+villain:
+  - id: noctar
+    display_name: Noctar
+    type: character_3d
+    reference_image: references/concept_cards/file_0000000051787243b6309b94202b8c8b.png
+    output_glb: generated_assets/models_3d/characters/noctar.glb
+    output_image: generated_assets/images/characters/noctar_concept.png
+    prompt: >
+      Noctar, dark former master of the four forms, black and purple armor,
+      prism chains, corrupted crystal crown, powerful final boss, premium
+      cartoon fantasy 3D platformer villain.
+
+environment:
+  - id: level_01_bridge_four_forms
+    display_name: Le Pont des Quatre Formes
+    type: environment_3d
+    reference_image: references/visual_cards/04_carte_premier_niveau_pont_quatre_formes.png
+    output_glb: generated_assets/models_3d/environments/level_01_bridge_four_forms.glb
+    output_image: generated_assets/images/environments/level_01_bridge_four_forms.png
+    prompt: >
+      Morphoria floating island 3D platformer level, stone zone, leaf wind zone,
+      paper rune zone, scissors mechanical zone, crystal cages, golden faceted
+      stars, colorful readable layout, premium cartoon game environment.
+
+ui:
+  - id: hud_form_wheel
+    display_name: HUD and Form Wheel
+    type: ui_concept
+    reference_image: references/visual_cards/07_interface_hud_roue_des_formes.png
+    output_image: generated_assets/images/ui/hud_form_wheel.png
+    prompt: >
+      Morphoria game HUD and form wheel, dark blue panels with bright colored
+      accents, four-form radial selector with Rokko Luma Papyra Cizo, golden
+      stars, prism stars, hearts, checkpoint feedback, polished family 3D
+      platformer UI.
