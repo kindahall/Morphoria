@@ -13,6 +13,8 @@ namespace Morphoria
         public GameObject villagerVisual;
         private bool opened;
 
+        public bool IsOpened => opened;
+
         public bool CanInteract(FormDefinition form)
         {
             if (opened)

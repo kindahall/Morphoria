@@ -19,6 +19,9 @@ namespace Morphoria
         private GUIStyle labelStyle;
         private GUIStyle smallStyle;
         private GUIStyle promptStyle;
+        private Transform guideTarget;
+        private string guideLabel = string.Empty;
+        private float nextGuideRefresh;
 
         private void OnGUI()
         {
@@ -57,6 +60,7 @@ namespace Morphoria
             DrawPanel(new Rect(Screen.width - 318f, 18f, 300f, 86f), form.accent);
             GUI.Label(new Rect(Screen.width - 300f, 30f, 260f, 26f), "Objectif", titleStyle);
             GUI.Label(new Rect(Screen.width - 300f, 62f, 260f, 26f), objective, labelStyle);
+            DrawGuideMarker(form);
 
             string feedback = player.FeedbackText;
             if (!string.IsNullOrEmpty(feedback))
@@ -171,6 +175,149 @@ namespace Morphoria
                 normal = { textColor = Color.white },
                 alignment = TextAnchor.MiddleCenter
             };
+        }
+
+        private void DrawGuideMarker(FormDefinition form)
+        {
+            RefreshGuideTarget();
+            if (guideTarget == null || string.IsNullOrEmpty(guideLabel))
+            {
+                return;
+            }
+
+            Camera camera = player.mainCamera != null ? player.mainCamera : Camera.main;
+            if (camera == null)
+            {
+                return;
+            }
+
+            Vector3 worldPosition = guideTarget.position + Vector3.up * 1.8f;
+            Vector3 screen = camera.WorldToScreenPoint(worldPosition);
+            if (screen.z < 0f)
+            {
+                screen.x = Screen.width - screen.x;
+                screen.y = Screen.height - screen.y;
+            }
+
+            float margin = 48f;
+            float x = Mathf.Clamp(screen.x, margin, Screen.width - margin);
+            float y = Mathf.Clamp(Screen.height - screen.y, margin, Screen.height - margin);
+            float distance = Vector3.Distance(player.transform.position, guideTarget.position);
+            Rect rect = new Rect(x - 74f, y - 18f, 148f, 36f);
+            DrawPanel(rect, form.accent);
+            GUI.Label(new Rect(rect.x + 8f, rect.y + 8f, rect.width - 16f, 20f), guideLabel + "  " + Mathf.RoundToInt(distance) + "m", smallStyle);
+        }
+
+        private void RefreshGuideTarget()
+        {
+            if (Time.unscaledTime < nextGuideRefresh && guideTarget != null)
+            {
+                return;
+            }
+
+            nextGuideRefresh = Time.unscaledTime + 0.25f;
+            guideTarget = null;
+            guideLabel = string.Empty;
+
+            if (showLevelGoals)
+            {
+                if (miniBoss != null && !miniBoss.IsDefeated && targetVillagers > 0)
+                {
+                    guideTarget = miniBoss.transform;
+                    guideLabel = "Garde-Cage";
+                    return;
+                }
+
+                if (player.Inventory.VillagersSaved < targetVillagers && TryFindNearestCage(out VillagerCage cage))
+                {
+                    guideTarget = cage.transform;
+                    guideLabel = "Cage";
+                    return;
+                }
+
+                if (TryFindNearestExit(out LevelExit exit))
+                {
+                    guideTarget = exit.transform;
+                    guideLabel = "Sortie";
+                }
+
+                return;
+            }
+
+            if (TryFindNearestPortal(out MorphoriaScenePortal portal))
+            {
+                guideTarget = portal.transform;
+                guideLabel = string.IsNullOrEmpty(portal.label) ? "Portail" : portal.label;
+            }
+        }
+
+        private bool TryFindNearestCage(out VillagerCage nearest)
+        {
+            VillagerCage[] cages = FindObjectsByType<VillagerCage>();
+            nearest = null;
+            float bestDistance = float.MaxValue;
+            for (int i = 0; i < cages.Length; i++)
+            {
+                if (cages[i] == null || cages[i].IsOpened)
+                {
+                    continue;
+                }
+
+                float distance = Vector3.Distance(player.transform.position, cages[i].transform.position);
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    nearest = cages[i];
+                }
+            }
+
+            return nearest != null;
+        }
+
+        private bool TryFindNearestExit(out LevelExit nearest)
+        {
+            LevelExit[] exits = FindObjectsByType<LevelExit>();
+            nearest = null;
+            float bestDistance = float.MaxValue;
+            for (int i = 0; i < exits.Length; i++)
+            {
+                if (exits[i] == null)
+                {
+                    continue;
+                }
+
+                float distance = Vector3.Distance(player.transform.position, exits[i].transform.position);
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    nearest = exits[i];
+                }
+            }
+
+            return nearest != null;
+        }
+
+        private bool TryFindNearestPortal(out MorphoriaScenePortal nearest)
+        {
+            MorphoriaScenePortal[] portals = FindObjectsByType<MorphoriaScenePortal>();
+            nearest = null;
+            float bestDistance = float.MaxValue;
+            for (int i = 0; i < portals.Length; i++)
+            {
+                if (portals[i] == null)
+                {
+                    continue;
+                }
+
+                float distance = Vector3.Distance(player.transform.position, portals[i].transform.position);
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    nearest = portals[i];
+                }
+            }
+
+            return nearest != null;
         }
 
         private static string Hearts(int count)

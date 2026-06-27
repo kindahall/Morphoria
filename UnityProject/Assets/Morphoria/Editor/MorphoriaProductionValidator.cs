@@ -178,6 +178,7 @@ public static class MorphoriaProductionValidator
         RequireOne<MorphoriaPauseMenu>(sceneName, issues);
         RequireOne<MorphoriaLevelResultScreen>(sceneName, issues);
         RequireOne<LevelExit>(sceneName, issues);
+        RequireAtLeast<Checkpoint>(sceneName, 1, issues);
         RequireAtLeast<MorphoriaEnemy>(sceneName, 2, issues);
         RequireAtLeast<MorphoriaCollectible>(sceneName, 8, issues);
 
@@ -332,6 +333,11 @@ public static class MorphoriaProductionValidator
             if (!hasSceneTarget && !hasLevelTarget)
             {
                 issues.Add(sceneName + ": portal " + GetHierarchyPath(portal.gameObject) + " has no target.");
+            }
+
+            if (!((object)portal is IFormInteractable))
+            {
+                issues.Add(sceneName + ": portal " + GetHierarchyPath(portal.gameObject) + " is not interactable.");
             }
 
             if (hasSceneTarget && !File.Exists(ScenePath(portal.targetScene)))
