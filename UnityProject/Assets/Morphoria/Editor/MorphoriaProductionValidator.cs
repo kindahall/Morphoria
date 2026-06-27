@@ -86,12 +86,12 @@ public static class MorphoriaProductionValidator
             if (next != null)
             {
                 MorphoriaLevelProgress nextProgress = MorphoriaSaveSystem.GetProgress(data, next.id);
-                if (!result.unlockedNextLevel || !nextProgress.unlocked || result.nextLevelName != next.displayName)
+                if (!result.unlockedNextLevel || !nextProgress.unlocked || result.nextLevelId != next.id || result.nextLevelName != next.displayName)
                 {
                     issues.Add("Campaign clear did not unlock next level after " + level.id + ".");
                 }
             }
-            else if (!data.finalBossDefeated || result.unlockedNextLevel || result.nextLevelName != string.Empty)
+            else if (!data.finalBossDefeated || result.unlockedNextLevel || result.nextLevelId != string.Empty || result.nextLevelName != string.Empty)
             {
                 issues.Add("Final campaign clear did not mark Noctar defeated correctly.");
             }

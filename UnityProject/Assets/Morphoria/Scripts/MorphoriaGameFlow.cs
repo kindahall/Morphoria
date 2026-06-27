@@ -126,6 +126,7 @@ namespace Morphoria
         public string levelId;
         public string levelName;
         public string rank;
+        public string nextLevelId;
         public string nextLevelName;
         public bool firstClear;
         public bool newBest;
@@ -197,6 +198,7 @@ namespace Morphoria
                 levelId = level.id,
                 levelName = level.displayName,
                 rank = RankFor(level, goldenStars, prismStars, villagersSaved),
+                nextLevelId = next != null ? next.id : string.Empty,
                 nextLevelName = next != null ? next.displayName : string.Empty,
                 firstClear = firstClear,
                 newBest = newBest,
