@@ -9,6 +9,9 @@ EditorBuildSettings:
     path: Assets/Morphoria/Scenes/MainMenu.unity
     guid: 41545e3ad77ab406a82109c2e67edcc1
   - enabled: 1
+    path: Assets/Morphoria/Scenes/PrologueVillageVole.unity
+    guid: 09586c66102de4932b9322c7b8d6a7fd
+  - enabled: 1
     path: Assets/Morphoria/Scenes/VillageEcloriaHub.unity
     guid: 46c5ec9b6a62d4b1bba03182669a37ef
   - enabled: 1

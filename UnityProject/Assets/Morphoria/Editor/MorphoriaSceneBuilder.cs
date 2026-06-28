@@ -11,6 +11,7 @@ using UnityEngine.SceneManagement;
 public static class MorphoriaSceneBuilder
 {
     private const string MainMenuPath = "Assets/Morphoria/Scenes/MainMenu.unity";
+    private const string ProloguePath = "Assets/Morphoria/Scenes/PrologueVillageVole.unity";
     private const string HubPath = "Assets/Morphoria/Scenes/VillageEcloriaHub.unity";
     private const string WorldMapPath = "Assets/Morphoria/Scenes/WorldMap.unity";
     private const string FinalePath = "Assets/Morphoria/Scenes/FinaleMorphoria.unity";
@@ -183,6 +184,7 @@ public static class MorphoriaSceneBuilder
         MorphoriaPrefabBuilder.BuildCharacterPrefabs();
 
         BuildMainMenuScene();
+        BuildPrologueScene();
         BuildHubScene();
         BuildWorldMapScene();
         BuildFinaleScene();
@@ -222,6 +224,48 @@ public static class MorphoriaSceneBuilder
         controller.AddComponent<MorphoriaMenuScreen>();
 
         EditorSceneManager.SaveScene(scene, MainMenuPath);
+    }
+
+    private static void BuildPrologueScene()
+    {
+        Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        scene.name = MorphoriaGameContent.PrologueScene;
+        ConfigureRenderSettings(new Color(0.3f, 0.42f, 0.62f), new Color(0.36f, 0.5f, 0.72f), 0.012f);
+        CreateLighting();
+        CreateFeedbackSystem();
+        CreateShellCamera("PrologueCamera", new Vector3(0f, 5.6f, -11.5f), new Vector3(0f, 1.25f, 0.1f), new Color(0.06f, 0.08f, 0.13f), 48f);
+
+        Transform root = new GameObject("Morphoria_Prologue_Village_Vole").transform;
+        CreateIsland("Prologue_Ecloria_Fracturee", new Vector3(0f, -0.45f, 0f), new Vector3(13f, 1f, 8f), neutralMat, root);
+        CreateCube("Prologue_Coeur_Etoiles_Vole", new Vector3(0f, 1.55f, 0.45f), new Vector3(0.85f, 1.55f, 0.85f), prismMat, root).transform.rotation = Quaternion.Euler(0f, 38f, 45f);
+        CreateCylinder("Prologue_Cage_Ring_A", new Vector3(0f, 1.88f, 0.45f), new Vector3(2.1f, 0.06f, 2.1f), crystalMat, root, Quaternion.Euler(90f, 0f, 0f));
+        CreateCylinder("Prologue_Cage_Ring_B", new Vector3(0f, 2.15f, 0.45f), new Vector3(2.8f, 0.05f, 2.8f), prismMat, root, Quaternion.Euler(90f, 0f, 18f));
+
+        CreateFormStatue("Prologue_Taro_Roc", new Vector3(-4.8f, 0.45f, -0.55f), stoneMat, "PF_Rokko", root);
+        CreateFormStatue("Prologue_Lina_Virefeuille", new Vector3(-2.0f, 0.45f, 1.55f), leafMat, "PF_Luma", root);
+        CreateFormStatue("Prologue_Milo_Pli", new Vector3(2.0f, 0.45f, 1.55f), paperMat, "PF_Papyra", root);
+        CreateFormStatue("Prologue_Sia_Lamevive", new Vector3(4.8f, 0.45f, -0.55f), scissorsMat, "PF_Cizo", root);
+
+        GameObject noctar = InstantiateCharacterPrefab("PF_Noctar", root);
+        if (noctar != null)
+        {
+            noctar.name = "Prologue_Nocterion_Geolier";
+            noctar.transform.localPosition = new Vector3(0f, 0.08f, -2.65f);
+            noctar.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
+            noctar.transform.localScale = new Vector3(0.9f, 0.9f, 0.9f);
+            DestroyCollidersImmediate(noctar);
+        }
+
+        CreateDecorCube("Prologue_Chaine_Cristal_A", new Vector3(-1.65f, 1.55f, -1.6f), new Vector3(0.08f, 2.2f, 0.08f), crystalMat, root).transform.rotation = Quaternion.Euler(0f, 0f, -28f);
+        CreateDecorCube("Prologue_Chaine_Cristal_B", new Vector3(1.65f, 1.55f, -1.6f), new Vector3(0.08f, 2.2f, 0.08f), crystalMat, root).transform.rotation = Quaternion.Euler(0f, 0f, 28f);
+        CreateDecorCube("Prologue_Village_Degat_A", new Vector3(-5.3f, 0.58f, 2.8f), new Vector3(1.4f, 0.22f, 0.28f), darkRockMat, root).transform.rotation = Quaternion.Euler(0f, 20f, -12f);
+        CreateDecorCube("Prologue_Village_Degat_B", new Vector3(5.2f, 0.58f, 2.7f), new Vector3(1.3f, 0.22f, 0.28f), darkRockMat, root).transform.rotation = Quaternion.Euler(0f, -18f, 10f);
+        CreateTitleText("Le Village Vole", new Vector3(0f, 3.45f, 0.3f), 0.5f, crystalMat.color, root);
+        CreateDecor(root);
+
+        GameObject controller = new GameObject("Prologue_Controller");
+        controller.AddComponent<MorphoriaPrologueScreen>();
+        EditorSceneManager.SaveScene(scene, ProloguePath);
     }
 
     private static void BuildHubScene()
@@ -548,6 +592,7 @@ public static class MorphoriaSceneBuilder
         List<EditorBuildSettingsScene> scenes = new List<EditorBuildSettingsScene>
         {
             new EditorBuildSettingsScene(MainMenuPath, true),
+            new EditorBuildSettingsScene(ProloguePath, true),
             new EditorBuildSettingsScene(HubPath, true),
             new EditorBuildSettingsScene(WorldMapPath, true),
             new EditorBuildSettingsScene(FinalePath, true),

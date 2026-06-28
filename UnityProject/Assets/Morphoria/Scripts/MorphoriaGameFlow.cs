@@ -29,6 +29,7 @@ namespace Morphoria
     public static class MorphoriaGameContent
     {
         public const string MainMenuScene = "MainMenu";
+        public const string PrologueScene = "PrologueVillageVole";
         public const string HubScene = "VillageEcloriaHub";
         public const string WorldMapScene = "WorldMap";
         public const string FinaleScene = "FinaleMorphoria";
@@ -147,9 +148,10 @@ namespace Morphoria
     [Serializable]
     public sealed class MorphoriaSaveData
     {
-        public int version = 2;
+        public int version = 3;
         public string currentLevelId = MorphoriaGameContent.Levels[0].id;
         public string lastScene = MorphoriaGameContent.HubScene;
+        public bool prologueSeen;
         public int totalGoldenStars;
         public int totalPrismStars;
         public int totalVillagersSaved;
@@ -389,7 +391,7 @@ namespace Morphoria
                 data.levels = new List<MorphoriaLevelProgress>();
             }
 
-            data.version = Mathf.Max(2, data.version);
+            data.version = Mathf.Max(3, data.version);
 
             for (int i = 0; i < MorphoriaGameContent.Levels.Length; i++)
             {

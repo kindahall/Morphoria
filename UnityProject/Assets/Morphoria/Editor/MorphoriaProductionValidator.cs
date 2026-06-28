@@ -44,6 +44,11 @@ public static class MorphoriaProductionValidator
     private static void ValidateCampaignProgression(List<string> issues)
     {
         MorphoriaSaveData data = MorphoriaSaveSystem.CreateNew();
+        if (data.prologueSeen)
+        {
+            issues.Add("Fresh campaign save should start before the prologue has been seen.");
+        }
+
         if (data.levels.Count != MorphoriaGameContent.Levels.Length)
         {
             issues.Add("Campaign save should track " + MorphoriaGameContent.Levels.Length + " levels, found " + data.levels.Count + ".");
@@ -140,6 +145,7 @@ public static class MorphoriaProductionValidator
         List<string> paths = new List<string>
         {
             ScenePath(MorphoriaGameContent.MainMenuScene),
+            ScenePath(MorphoriaGameContent.PrologueScene),
             ScenePath(MorphoriaGameContent.HubScene),
             ScenePath(MorphoriaGameContent.WorldMapScene),
             ScenePath(MorphoriaGameContent.FinaleScene)
@@ -233,6 +239,11 @@ public static class MorphoriaProductionValidator
         {
             RequireOne<MorphoriaMenuScreen>(sceneName, issues);
             ValidateMainMenuCharacters(sceneName, issues);
+        }
+        else if (sceneName == MorphoriaGameContent.PrologueScene)
+        {
+            RequireOne<MorphoriaPrologueScreen>(sceneName, issues);
+            ValidatePrologueCharacters(sceneName, issues);
         }
         else if (sceneName == MorphoriaGameContent.WorldMapScene)
         {
@@ -420,6 +431,36 @@ public static class MorphoriaProductionValidator
             if (actualPath != prefabPath)
             {
                 issues.Add(sceneName + ": menu character " + objectName + " is not linked to " + prefabPath + ".");
+            }
+        }
+    }
+
+    private static void ValidatePrologueCharacters(string sceneName, List<string> issues)
+    {
+        string[,] expected =
+        {
+            { "Prologue_Taro_Roc_Character", "Assets/Morphoria/Prefabs/Characters/PF_Rokko.prefab" },
+            { "Prologue_Lina_Virefeuille_Character", "Assets/Morphoria/Prefabs/Characters/PF_Luma.prefab" },
+            { "Prologue_Milo_Pli_Character", "Assets/Morphoria/Prefabs/Characters/PF_Papyra.prefab" },
+            { "Prologue_Sia_Lamevive_Character", "Assets/Morphoria/Prefabs/Characters/PF_Cizo.prefab" },
+            { "Prologue_Nocterion_Geolier", "Assets/Morphoria/Prefabs/Characters/PF_Noctar.prefab" }
+        };
+
+        for (int i = 0; i < expected.GetLength(0); i++)
+        {
+            string objectName = expected[i, 0];
+            string prefabPath = expected[i, 1];
+            GameObject visual = GameObject.Find(objectName);
+            if (visual == null)
+            {
+                issues.Add(sceneName + ": missing prologue character " + objectName + ".");
+                continue;
+            }
+
+            string actualPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(visual);
+            if (actualPath != prefabPath)
+            {
+                issues.Add(sceneName + ": prologue character " + objectName + " is not linked to " + prefabPath + ".");
             }
         }
     }

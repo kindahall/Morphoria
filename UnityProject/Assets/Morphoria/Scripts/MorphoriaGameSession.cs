@@ -71,8 +71,10 @@ namespace Morphoria
         {
             SaveData = MorphoriaSaveSystem.CreateNew();
             StatusText = "Nouvelle partie";
+            SaveData.prologueSeen = false;
+            SaveData.lastScene = MorphoriaGameContent.PrologueScene;
             Save();
-            LoadScene(MorphoriaGameContent.HubScene);
+            LoadScene(MorphoriaGameContent.PrologueScene);
         }
 
         public void ContinueGame()

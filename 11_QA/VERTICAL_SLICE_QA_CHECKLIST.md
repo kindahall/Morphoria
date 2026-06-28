@@ -47,6 +47,8 @@
 ## Campaign Shell
 
 - Main menu opens and can start a new game.
+- New game opens the short prologue before the village and marks it as seen after completion.
+- Prologue shows the four heroes, Nocterion, the stolen prism heart, crystal cages, and the short GDD dialogue beats.
 - Main menu shows save progression, disables continue without a save, and asks confirmation before replacing a save.
 - Settings can change and restore volume, camera, color assist, feedback text, and reduced motion.
 - Hub loads with player, HUD, pause menu, portals, and KO recovery.
@@ -99,5 +101,5 @@
 
 - Run `Morphoria/Build Game Shell Scenes` after generator changes.
 - Run `Morphoria/Validate Production Scenes` before commits.
-- Expected result: `Morphoria production validation passed for 10 scene(s).`
+- Expected result: `Morphoria production validation passed for 11 scene(s).`
 - Run `git diff --check` before committing.
